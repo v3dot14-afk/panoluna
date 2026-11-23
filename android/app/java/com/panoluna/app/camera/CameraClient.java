@@ -241,33 +241,28 @@ public final class CameraClient {
     }
 
     /**
-     * Mettere la camera in live view (annuncio access-state + START_LIVE_STREAM).
+     * Mettere la camera in live view (START_LIVE_STREAM).
      *
      * Il gimbal risponde alla camera solo mentre trasmette il preview: senza
-     * questa sequenza i comandi del gimbal vengono ignorati. L'annuncio
-     * (SET_ACCESS_CAMERA_FILE_STATE) distende la camera che, da un firmware
-     * recente, si "chiude" quando un'app si collega. START_LIVE_STREAM avvia la
-     * trasmissione del video sul sottore TCP (i frame MEDIA vengono già
+     * questa sequenza i comandi del gimbal vengono ignorati. START_LIVE_STREAM
+     * avvia la trasmissione del video sul sottore TCP (i frame MEDIA vengono già
      * scartati dal lettore della connessione).
+     *
+     * Si invia SOLO START_LIVE_STREAM: i riferimenti verificati sulla Luna Ultra
+     * (Insta360luna di Apatassini, insta360-luna-ultra-desktop di Ripwords) non
+     * inviano SET_ACCESS_CAMERA_FILE_STATE. Questi comandi di accesso ai file
+     * mutano lo stato della camera e, su firmware 1.0.288, la allontanano dal
+     * estado in cui il gate del gimbal si attiva, lasciando la connessione ma
+     * senza controllo.
      */
     public void enterLiveView(final Callback<Boolean> callback) {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                boolean ok = false;
-                try {
-                    // Best effort: un firmware che non conosce il comando va avanti.
-                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
-                            Messages.setAccessCameraFileState(ProtoCodes.AccessState.LIVE_VIEW),
-                            2000L).get();
-                } catch (Exception ignored) {
-                    // non bloccare: START_LIVE_STREAM è quello che conta
-                }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
                             settings.getRequestTimeoutMs()).get();
-                    ok = true;
                 } catch (final Exception e) {
                     main.post(new Runnable() {
                         @Override
@@ -277,7 +272,7 @@ public final class CameraClient {
                     });
                     return;
                 }
-                final boolean result = ok;
+                final boolean result = true;
                 main.post(new Runnable() {
                     @Override
                     public void run() {
