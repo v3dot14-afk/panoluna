@@ -142,8 +142,14 @@ SPHERE_360 (1)` под `function_mode = NORMAL_POWER_PANO_IMAGE (14)` → **од
 
 - Файлы: `http://192.168.42.1<path>`, например
   `/storage_internal/DCIM/Camera01/IMG_…jpg`.
-- Live-превью: `POST /osc/commands/execute` с `{"name":"camera.getLivePreview"}`,
-  поток MJPEG, который читается как последовательность `FF D8 … FF D9`.
+- Live-превью: два пути, как в официальном приложении Insta360:
+  1. **OSC-MJPEG** (первый): `POST /osc/commands/execute` с
+     `{"name":"camera.getLivePreview"}`, поток MJPEG, который читается как последовательность
+     `FF D8 … FF D9` (разделители кадра, не Content-Length).
+  2. **TCP-поток** (fallback): при `START_LIVE_STREAM` камера например по TCP MEDIA-фреймы
+     (substream `0x20`, payload Annex-B, **H.265** на прошивке 1.0.288). Декодируется через
+     `MediaCodec` на `SurfaceView`; кодек определяется динамически по NAL (SPS/VPS), декодер
+     стартует только после keyframe.
 - `camera.listFiles` требует заголовок `X-XSRF-Protected: 1`.
 
 ## Wi-Fi

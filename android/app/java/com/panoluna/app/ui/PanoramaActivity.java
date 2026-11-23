@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -17,6 +16,7 @@ import com.panoluna.app.R;
 import com.panoluna.app.camera.PanoPlan;
 import com.panoluna.app.camera.PanoShooter;
 import com.panoluna.app.preview.MjpegPreview;
+import com.panoluna.app.preview.VideoDecoder;
 import com.panoluna.app.proto.Ucd2;
 
 /**
@@ -30,7 +30,6 @@ public final class PanoramaActivity extends Activity {
 
     private PanoLunaApp app;
     private MjpegPreview preview;
-    private Handler timer = new Handler();
 
     private ImageView previewView;
     private TextView previewOff;
@@ -43,11 +42,12 @@ public final class PanoramaActivity extends Activity {
     private ImageButton pauseButton;
     private ImageButton resumeButton;
     private ImageButton stopButton;
-    private JoystickView joystick;
 
-    private float joyPan;
-    private float joyTilt;
-    private boolean joystickActive;
+    /** Декодёр прямого эфира по TCP-потоку (MediaCodec), если OSC-MJPEG недоступен. */
+    private VideoDecoder videoDecoder;
+    private android.view.SurfaceView previewSurface;
+    private android.view.SurfaceHolder previewHolder;
+    private volatile boolean decodeActive;
 
     /** 已经开始了 live-view 初始化（OSC 预览或 TCP 流），避免重复启动。 */
     private volatile boolean liveViewStarted;
@@ -58,20 +58,6 @@ public final class PanoramaActivity extends Activity {
 
     /** Тема, применённая к этой активити: при возвращении с измененной темой пересоздаём. */
     private int appliedThemeMode = Integer.MIN_VALUE;
-
-    private final Runnable joystickTick = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                if (app.isCameraConnected() && joystickActive) {
-                    app.gimbal().setVelocity(joyPan, joyTilt, app.camera());
-                }
-            } catch (Throwable ignored) {
-                // nessun comando deve cadere l'app
-            }
-            timer.postDelayed(this, 25L);
-        }
-    };
 
     private final PanoShooter.Listener shooterListener = new PanoShooter.Listener() {
         @Override
@@ -178,27 +164,35 @@ public final class PanoramaActivity extends Activity {
         pauseButton = findViewById(R.id.btn_pause);
         resumeButton = findViewById(R.id.btn_resume);
         stopButton = findViewById(R.id.btn_stop);
-        joystick = findViewById(R.id.joystick);
 
         app.shooter().setListener(shooterListener);
 
-        joystick.setListener(new JoystickView.Listener() {
+        // Прямой эфир по TCP-потоку: декодируем MEDIA-фреймы на SurfaceView (fallback для
+        // OSC-MJPEG, как в официальном приложении Insta360).
+        previewSurface = findViewById(R.id.preview_surface);
+        previewHolder = previewSurface.getHolder();
+        videoDecoder = new VideoDecoder();
+        previewHolder.addCallback(new android.view.SurfaceHolder.Callback() {
             @Override
-            public void onMove(float horizontal, float vertical) {
-                joyPan = horizontal;
-                joyTilt = vertical;
-                joystickActive = true;
+            public void surfaceCreated(android.view.SurfaceHolder holder) {
+                app.setVideoFrameListener(new PanoLunaApp.VideoFrameListener() {
+                    @Override
+                    public void onVideoFrame(byte[] annexB) {
+                        PanoramaActivity.this.onVideoFrame(annexB);
+                    }
+                });
             }
 
             @Override
-            public void onRelease() {
-                joystickActive = false;
-                joyPan = 0f;
-                joyTilt = 0f;
-                try {
-                    app.gimbal().stop(app.camera());
-                } catch (Throwable ignored) {
-                }
+            public void surfaceChanged(android.view.SurfaceHolder holder, int format,
+                                       int width, int height) {
+            }
+
+            @Override
+            public void surfaceDestroyed(android.view.SurfaceHolder holder) {
+                app.setVideoFrameListener(null);
+                videoDecoder.release();
+                decodeActive = false;
             }
         });
 
@@ -271,7 +265,6 @@ public final class PanoramaActivity extends Activity {
             return;
         }
         app.addConnectionListener(connectionListener);
-        timer.post(joystickTick);
         // Il gimbal risponde solo mentre la camera trasmette il preview. Quando la
         // camera è già connessa (o si ricolleca), avvia la live view prima dell'anteprima.
         if (app.isCameraConnected()) {
@@ -283,9 +276,31 @@ public final class PanoramaActivity extends Activity {
     protected void onStop() {
         super.onStop();
         app.removeConnectionListener(connectionListener);
-        timer.removeCallbacks(joystickTick);
         preview.stop();
-        joystickActive = false;
+    }
+
+    /** Приходит MEDIA-фрейм прямого эфира по TCP: декодируем на SurfaceView. */
+    private void onVideoFrame(byte[] annexB) {
+        try {
+            android.view.Surface surface = previewHolder.getSurface();
+            if (surface == null || !surface.isValid()) {
+                return;
+            }
+            videoDecoder.feed(surface, annexB);
+            if (!decodeActive && videoDecoder.getFramesDecoded() > 0 && !previewFrames) {
+                decodeActive = true;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        previewSurface.setVisibility(View.VISIBLE);
+                        previewView.setVisibility(View.GONE);
+                        previewOff.setVisibility(View.GONE);
+                    }
+                });
+            }
+        } catch (Throwable ignored) {
+            // декодирование не должно ронять приложение
+        }
     }
 
     private void startPreview() {
@@ -300,6 +315,8 @@ public final class PanoramaActivity extends Activity {
                                 @Override
                                 public void run() {
                                     previewOff.setVisibility(View.GONE);
+                                    previewSurface.setVisibility(View.GONE);
+                                    previewView.setVisibility(View.VISIBLE);
                                     previewView.setImageBitmap(frame);
                                 }
                             });

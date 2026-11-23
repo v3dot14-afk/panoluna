@@ -12,10 +12,4 @@
     <color name="ok">#43A047</color>
     <color name="warn">#E53935</color>
     <color name="line">#3A3F45</color>
-
-    <!-- Цвета джойстика: видны на тёмном фоне. -->
-    <color name="joystick_ring">#3A3F45</color>
-    <color name="joystick_cross">#2A2E33</color>
-    <color name="joystick_knob">#FFB300</color>
-    <color name="joystick_knob_edge">#121417</color>
 </resources>

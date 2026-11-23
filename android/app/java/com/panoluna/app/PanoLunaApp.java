@@ -38,6 +38,11 @@ public final class PanoLunaApp extends Application {
         void onNotification(Ucd2.Frame frame);
     }
 
+    /** Принимает MEDIA-фреймы прямого эфира (annexB) для декодирования на Surface. */
+    public interface VideoFrameListener {
+        void onVideoFrame(byte[] annexB);
+    }
+
     private Settings settings;
     private CameraConnection connection;
     private CameraClient camera;
@@ -48,6 +53,11 @@ public final class PanoLunaApp extends Application {
     private Network wifiNetwork;
     private ConnectivityManager.NetworkCallback pinCallback;
     private final List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
+    private volatile VideoFrameListener videoFrameListener;
+
+    public void setVideoFrameListener(VideoFrameListener listener) {
+        this.videoFrameListener = listener;
+    }
 
     @Override
     public void onCreate() {
@@ -76,7 +86,11 @@ public final class PanoLunaApp extends Application {
 
             @Override
             public void onVideoFrame(byte[] annexB) {
-                // L'anteprima usata dall'app e' MJPEG via HTTP.
+                // Прямой эфир по TCP: декодируем на Surface (fallback для OSC-MJPEG).
+                VideoFrameListener l = videoFrameListener;
+                if (l != null) {
+                    l.onVideoFrame(annexB);
+                }
             }
         });
         // Тему применяют сами активити через applyTheme(activity).
