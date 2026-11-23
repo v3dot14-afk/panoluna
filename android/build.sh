@@ -62,7 +62,7 @@ fetch_tools() {
     mkdir -p "$TOOLS"
     local tmp
     tmp="$(mktemp -d)"
-    if [ ! -f "$TOOLS/android.jar" ] || [ ! -f "$D8" ] || [ ! -f "$APKSIGNER" ] || [ ! -f "$ECJ" ]; then
+    if [ ! -f "$TOOLS/android.jar" ] || [ ! -f "$D8" ] || [ ! -f "$APKSIGNER" ] || [ ! -f "$ECJ" ] || [ ! -f "$KEYSTORE" ]; then
         log "Scarico android.jar, d8, apksigner, ecj da npm:@drxiaozhi/minapk"
         curl -sL -m 600 -o "$tmp/minapk.tgz" \
             "https://registry.npmjs.org/@drxiaozhi/minapk/-/minapk-0.5.1.tgz"

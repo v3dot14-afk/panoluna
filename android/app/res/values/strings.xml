@@ -134,6 +134,7 @@
     <string name="settings_invert_tilt">Инвертировать tilt</string>
     <string name="settings_data">Данные</string>
     <string name="settings_clear">Очистить все данные приложения</string>
+    <string name="settings_clear_action">Очистить</string>
     <string name="settings_clear_done">Данные приложения очищены</string>
     <string name="settings_templates">Шаблоны</string>
     <string name="settings_templates_info">Шаблоны PTGui и Pano2VR находятся в /templates: скопируйте их в папку шаблонов этих программ.</string>

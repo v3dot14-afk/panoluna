@@ -1,292 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:fillViewport="true">
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="16dp">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/settings_title"
+        android:textColor="@color/text"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Внешний вид -->
     <LinearLayout
+        style="@style/CardCompact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="28dp">
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <TextView
+            style="@style/FieldLabelCompact"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings_theme_dark" />
+
+        <Switch
+            android:id="@+id/set_dark_theme"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/settings_title"
-            android:textColor="@color/text"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:scaleX="1.05"
+            android:scaleY="1.05"
+            android:thumbTint="@color/accent"
+            android:trackTint="@color/surface_high"
+            android:switchMinWidth="50dp" />
+    </LinearLayout>
 
-        <!-- Внешний вид: переключение темы -->
+    <!-- Камера -->
+    <LinearLayout
+        style="@style/CardCompact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/GroupTitle"
+            android:layout_marginBottom="6dp"
+            android:text="@string/settings_camera" />
+
         <LinearLayout
-            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
             <TextView
-                android:layout_width="wrap_content"
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/settings_appearance"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                style="@style/SwitchRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/SwitchLabel"
-                        android:text="@string/settings_theme_dark" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/settings_theme_desc"
-                        android:textColor="@color/text_dim"
-                        android:textSize="13sp" />
-
-                </LinearLayout>
-
-                <Switch
-                    android:id="@+id/set_dark_theme"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:scaleX="1.05"
-                    android:scaleY="1.05"
-                    android:thumbTint="@color/accent"
-                    android:trackTint="@color/surface_high"
-                    android:switchMinWidth="52dp" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- Камера -->
-        <LinearLayout
-            style="@style/Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_camera"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                style="@style/FieldLabel"
-                android:layout_marginTop="10dp"
+                android:layout_weight="1"
                 android:text="@string/settings_host" />
 
             <EditText
                 android:id="@+id/set_host"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_field"
-                android:padding="12dp"
-                android:inputType="text"
-                android:textColor="@color/text"
-                android:textColorHint="@color/text_dim"
-                android:textSize="15sp" />
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1.2"
+                android:layout_marginStart="8dp"
+                android:inputType="text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
 
             <TextView
-                style="@style/FieldLabel"
-                android:layout_marginTop="10dp"
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="@string/settings_port" />
 
             <EditText
                 android:id="@+id/set_port"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_field"
-                android:padding="12dp"
-                android:inputType="number"
-                android:textColor="@color/text"
-                android:textColorHint="@color/text_dim"
-                android:textSize="15sp" />
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1.2"
+                android:layout_marginStart="8dp"
+                android:inputType="number" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
 
             <TextView
-                style="@style/FieldLabel"
-                android:layout_marginTop="10dp"
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="@string/settings_timeout" />
 
             <EditText
                 android:id="@+id/set_timeout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_field"
-                android:padding="12dp"
-                android:inputType="number"
-                android:textColor="@color/text"
-                android:textColorHint="@color/text_dim"
-                android:textSize="15sp" />
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1.2"
+                android:layout_marginStart="8dp"
+                android:inputType="number" />
         </LinearLayout>
+    </LinearLayout>
 
-        <!-- Gimbal -->
+    <!-- Гимбал -->
+    <LinearLayout
+        style="@style/CardCompact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/GroupTitle"
+            android:layout_marginBottom="6dp"
+            android:text="@string/settings_gimbal" />
+
         <LinearLayout
-            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
             <TextView
-                android:layout_width="wrap_content"
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/settings_gimbal"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:text="@string/settings_pan_limits" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+            <EditText
+                android:id="@+id/set_pan_min"
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:inputType="numberSigned" />
 
-                <TextView
-                    style="@style/FieldLabel"
-                    android:layout_gravity="center_vertical"
-                    android:text="@string/settings_pan_limits" />
+            <EditText
+                android:id="@+id/set_pan_max"
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:inputType="numberSigned" />
+        </LinearLayout>
 
-                <EditText
-                    android:id="@+id/set_pan_min"
-                    android:layout_width="70dp"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_field"
-                    android:padding="8dp"
-                    android:inputType="numberSigned"
-                    android:textColor="@color/text" />
-
-                <EditText
-                    android:id="@+id/set_pan_max"
-                    android:layout_width="70dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:background="@drawable/bg_field"
-                    android:padding="8dp"
-                    android:inputType="numberSigned"
-                    android:textColor="@color/text" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    style="@style/FieldLabel"
-                    android:layout_gravity="center_vertical"
-                    android:text="@string/settings_tilt_limits" />
-
-                <EditText
-                    android:id="@+id/set_tilt_min"
-                    android:layout_width="70dp"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_field"
-                    android:padding="8dp"
-                    android:inputType="numberSigned"
-                    android:textColor="@color/text" />
-
-                <EditText
-                    android:id="@+id/set_tilt_max"
-                    android:layout_width="70dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:background="@drawable/bg_field"
-                    android:padding="8dp"
-                    android:inputType="numberSigned"
-                    android:textColor="@color/text" />
-            </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
 
             <TextView
-                style="@style/FieldLabel"
-                android:layout_marginTop="10dp"
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/settings_tilt_limits" />
+
+            <EditText
+                android:id="@+id/set_tilt_min"
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:inputType="numberSigned" />
+
+            <EditText
+                android:id="@+id/set_tilt_max"
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:inputType="numberSigned" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/FieldLabelCompact"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="@string/settings_angular_scale" />
 
             <EditText
                 android:id="@+id/set_scale"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_field"
-                android:padding="12dp"
-                android:inputType="numberDecimal"
-                android:textColor="@color/text"
-                android:textColorHint="@color/text_dim"
-                android:textSize="15sp" />
-        </LinearLayout>
-
-        <!-- Данные -->
-        <LinearLayout
-            style="@style/Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_data"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/set_clear"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_button"
-                android:text="@string/settings_clear"
-                android:textColor="@color/warn" />
-        </LinearLayout>
-
-        <!-- О приложении -->
-        <LinearLayout
-            style="@style/Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_about"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/set_version"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/text"
-                android:textSize="13sp" />
+                style="@style/EditFieldCompact"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1.2"
+                android:layout_marginStart="8dp"
+                android:inputType="numberDecimal" />
         </LinearLayout>
     </LinearLayout>
-</ScrollView>
+
+    <!-- Данные -->
+    <LinearLayout
+        style="@style/CardCompact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            style="@style/FieldLabelCompact"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings_data" />
+
+        <Button
+            android:id="@+id/set_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_button"
+            android:minWidth="0dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="@string/settings_clear_action"
+            android:textColor="@color/warn"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/set_version"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+
+</LinearLayout>
