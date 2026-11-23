@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<papywizard>
+  <shoot>
+    <pict roll="0" pitch="-52.0000" yaw="0.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="90.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="180.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="270.0000"/>
+    <pict roll="0" pitch="0.0000" yaw="270.0000"/>
+    <pict roll="0" pitch="0.0000" yaw="180.0000"/>
+    <pict roll="0" pitch="0.0000" yaw="90.0000"/>
+    <pict roll="0" pitch="0.0000" yaw="0.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="0.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="90.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="180.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="270.0000"/>
+  </shoot>
+</papywizard>
