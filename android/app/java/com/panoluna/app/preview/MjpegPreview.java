@@ -95,7 +95,6 @@ public final class MjpegPreview {
             conn.setReadTimeout(READ_TIMEOUT_MS);
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json;charset=utf-8");
-            conn.setRequestProperty("X-XSRF-Protected", "1");
             conn.getOutputStream().write(REQUEST.getBytes("UTF-8"));
             conn.getOutputStream().flush();
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {

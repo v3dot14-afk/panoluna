@@ -3,7 +3,10 @@ package com.panoluna.app.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -30,6 +33,7 @@ public final class PanoramaActivity extends Activity {
 
     private PanoLunaApp app;
     private MjpegPreview preview;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private ImageView previewView;
     private TextView previewOff;
@@ -42,6 +46,7 @@ public final class PanoramaActivity extends Activity {
     private ImageButton pauseButton;
     private ImageButton resumeButton;
     private ImageButton stopButton;
+    private ImageButton connectButton;
 
     /** Декодёр прямого эфира по TCP-потоку (MediaCodec), если OSC-MJPEG недоступен. */
     private VideoDecoder videoDecoder;
@@ -144,6 +149,9 @@ public final class PanoramaActivity extends Activity {
 
     private static final int NOTIFICATION_BATTERY_UPDATE = 8195;
 
+    /** Подождать первому кадру OSC-MJPEG, прежде чем отдавать инициативу TCP-потоку. */
+    private static final long MJPEG_FIRST_FRAME_MS = 6000L;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -235,7 +243,7 @@ public final class PanoramaActivity extends Activity {
             }
         });
 
-        ImageButton connectButton = findViewById(R.id.btn_connect);
+        connectButton = findViewById(R.id.btn_connect);
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -310,7 +318,9 @@ public final class PanoramaActivity extends Activity {
                     new MjpegPreview.Listener() {
                         @Override
                         public void onFrame(Bitmap frame) {
+                            // OSC-MJPEG работает: это главный путь и он открывает gate гимбала.
                             previewFrames = true;
+                            handler.removeCallbacks(mjpegWatchdog);
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -326,6 +336,7 @@ public final class PanoramaActivity extends Activity {
                         public void onError(final String message) {
                             // L'anteprima OSC non è disponibile: avvii il flusso TCP di live
                             // view, che è la condizione per far rispondere il gimbal.
+                            handler.removeCallbacks(mjpegWatchdog);
                             startStreamFallback();
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -339,6 +350,7 @@ public final class PanoramaActivity extends Activity {
                         public void onClosed() {
                             // Поток OSC закрылся. Если кадров не пришло, preview не активен,
                             // и gate гимбала не удовлетворён: бросаемся на TCP-поток.
+                            handler.removeCallbacks(mjpegWatchdog);
                             if (!previewFrames) {
                                 startStreamFallback();
                             }
@@ -351,20 +363,39 @@ public final class PanoramaActivity extends Activity {
                             });
                         }
                     });
+            // Ни одного кадра OSC-MJPEG за отведённое время — камера его не предлагает:
+            // отдаём инициативу TCP-потоку (START_LIVE_STREAM), который тоже открывает gate.
+            handler.removeCallbacks(mjpegWatchdog);
+            handler.postDelayed(mjpegWatchdog, MJPEG_FIRST_FRAME_MS);
         } catch (Throwable t) {
             previewOff.setText("Предпросмотр недоступен: " + t.getMessage());
         }
     }
 
+    /** Следит, чтобы MJPEG либо принёс кадр, либо отдал инициативу TCP-потоку. */
+    private final Runnable mjpegWatchdog = new Runnable() {
+        @Override
+        public void run() {
+            if (previewFrames || streamStarted) {
+                return;
+            }
+            log("OSC-MJPEG не дал кадра, запускаю TCP-поток прямого эфира");
+            startStreamFallback();
+        }
+    };
+
     private void applyConnection(boolean connected, String reason) {
         if (connected) {
             statusText.setText(getString(R.string.connect_state_connected,
                     app.settings().getHost()));
+            // Значок связи зелёный, когда связь с камерой активна.
+            connectButton.setColorFilter(Color.rgb(0x16, 0xA3, 0x4A));
             ensureLiveView();
         } else {
             statusText.setText(R.string.connect_state_idle);
             previewOff.setText(reason == null
                     ? getString(R.string.main_preview_off) : reason);
+            connectButton.setColorFilter(Color.rgb(0x9A, 0xA0, 0xA6));
             // La prossima connessione riavvia la live view da zero.
             liveViewStarted = false;
             streamStarted = false;
@@ -375,10 +406,10 @@ public final class PanoramaActivity extends Activity {
      * Avvia la live view una sola volta alla connessione.
      *
      * Il gimbal risponde alla camera solo mentre è in funzione un preview in diretta.
-     * Il flusso TCP START_LIVE_STREAM è la condizione necessaria: si apre sempre,
-     * indipendentemente dal preview OSC (che serve solo per mostrare l'anteprima e,
-     * su alcuni firmware, non apre il gate). Il preview MJPEG via OSC si avvia
-     * parallelamente per il display.
+     * Si prova prima l'OSC-MJPEG: quando la camera lo offre, è il suono principale e
+     * basta lui a aprire il gate (come nell'app ufficiale, che non invia START_LIVE_STREAM
+     * quando il MJPEG è disponibile). Il flusso TCP START_LIVE_STREAM è il fallback:
+     * si avvia solo se il MJPEG non dà alcun quadro entro MJPEG_FIRST_FRAME_MS.
      */
     private void ensureLiveView() {
         if (liveViewStarted) {
@@ -386,22 +417,29 @@ public final class PanoramaActivity extends Activity {
         }
         liveViewStarted = true;
         previewFrames = false;
-        // Gate del gimbal: flusso TCP di live view, sempre.
-        startStreamFallback();
-        // Display: anteprima MJPEG via OSC (se la camera la offre).
+        // Display e gate: prima il MJPEG OSC (se disponibile).
         startPreview();
     }
 
     /**
-     * Avvia il flusso TCP di live view (START_LIVE_STREAM). È ciò che abilita il
-     * gimbal: la camera honora i comandi del gimbal solo mentre trasmette il
-     * preview. Si chiama sempre alla connessione (non solo come fallback).
+     * Avvia il flusso TCP di live view (START_LIVE_STREAM). Fallback quando il
+     * MJPEG OSC не принёс кадра: la camera honora i comandi del gimbal solo
+     * mentre trasmette il preview, e questo flusso apre il gate. Per decodificare
+     * i frame serviamo la SurfaceView.
      */
     private void startStreamFallback() {
         if (streamStarted) {
             return;
         }
         streamStarted = true;
+        // SurfaceView должна быть видимой, чтобы у неё появился Surface для декодера.
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                previewSurface.setVisibility(View.VISIBLE);
+                previewView.setVisibility(View.GONE);
+            }
+        });
         try {
             app.camera().enterLiveView(new com.panoluna.app.camera.CameraClient.Callback<Boolean>() {
                 @Override
