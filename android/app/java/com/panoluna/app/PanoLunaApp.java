@@ -44,8 +44,7 @@ public final class PanoLunaApp extends Application {
     private Gimbal gimbal;
     private PanoShooter shooter;
 
-    private final ConnectivityManager connectivity =
-            (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    private ConnectivityManager connectivity;
     private Network wifiNetwork;
     private ConnectivityManager.NetworkCallback pinCallback;
     private final List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
@@ -53,6 +52,10 @@ public final class PanoLunaApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        // Инициализируем здесь, а не в инициализаторе поля: поле конструируется до
+        // attachBaseContext, когда getSystemService() бросает NullPointerException
+        // и приложение падает на запуске.
+        connectivity = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         settings = new Settings(this);
         connection = new CameraConnection();
         camera = new CameraClient(settings, connection);
