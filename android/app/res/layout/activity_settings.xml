@@ -172,7 +172,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/bg_round"
+                android:background="@drawable/bg_button"
                 android:text="@string/settings_wifi_forget"
                 android:textColor="@color/text" />
         </LinearLayout>
@@ -308,7 +308,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/bg_round"
+                android:background="@drawable/bg_button"
                 android:text="@string/settings_clear"
                 android:textColor="@color/warn" />
         </LinearLayout>

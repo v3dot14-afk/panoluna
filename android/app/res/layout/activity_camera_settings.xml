@@ -42,7 +42,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="12 MP"
                     android:textColor="@color/text" />
 
@@ -52,7 +52,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="48 MP"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -73,7 +73,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="1x"
                     android:textColor="@color/text" />
 
@@ -83,7 +83,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="2x"
                     android:textColor="@color/text" />
 
@@ -93,7 +93,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="3x"
                     android:textColor="@color/text" />
 
@@ -103,7 +103,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="6x"
                     android:textColor="@color/text" />
 
@@ -113,7 +113,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="12x"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -142,7 +142,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_accent"
+                    android:background="@drawable/bg_button_accent"
                     android:text="@string/cam_auto"
                     android:textColor="@color/background" />
 
@@ -152,7 +152,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="@string/cam_pro"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -254,7 +254,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="Lento"
                     android:textColor="@color/text" />
 
@@ -264,7 +264,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="Medio"
                     android:textColor="@color/text" />
 
@@ -274,7 +274,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="Veloce"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -285,7 +285,7 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_round_accent"
+            android:background="@drawable/bg_button_accent"
             android:text="@string/cam_apply"
             android:textColor="@color/background"
             android:textStyle="bold" />

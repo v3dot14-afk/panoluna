@@ -110,9 +110,13 @@ public final class WifiConnector {
     }
 
     /**
-     * Сканирование и Return ALL видимых сетей (без фильтра по Luna), сортированных по силе
-     * сигнала. Используется для универсального поиска: даже если SSID камеры отличается,
-     * пользователь может выбрать нужную вручную.
+     * Сканирование всех видимых сетей (без фильтра по Luna), сортированных по силе сигнала.
+     * Используется для универсального поиска: даже если SSID камеры отличается, пользователь
+     * может выбрать нужную вручную.
+     *
+     * startScan() на многих устройствах (MIUI/HyperOS, Android 11+) возвращает false, хотя
+     * результаты сканирования читаются: поэтому результаты берём из getScanResults() и не
+     * прерываемся на false — только если сканирование и кэшированные данные пусты.
      */
     public void scanAll(final ScanCallback callback) {
         if (wifi == null) {
@@ -127,82 +131,40 @@ public final class WifiConnector {
             callback.onFailed("Не дано разрешение на сканирование Wi-Fi.");
             return;
         }
+        boolean started = false;
         try {
-            List<ScanResult> cached = allResults();
-            if (!cached.isEmpty()) {
-                callback.onResults(cached);
-            }
-            if (!wifi.startScan()) {
-                callback.onFailed("Не удалось запустить сканирование Wi-Fi.");
-                return;
-            }
-            final long deadline = System.currentTimeMillis() + 8000L;
-            pollScanAll(cached, deadline, callback);
-        } catch (SecurityException e) {
-            callback.onFailed("Не получено разрешение на сканирование Wi-Fi");
+            // Даже если startScan() вернёт false, попробуем получить результаты.
+            started = wifi.startScan();
         } catch (Exception e) {
-            callback.onFailed("Ошибка сканирования: " + e.getMessage());
+            Log.w(TAG, "startScan fallito: " + e.getMessage());
         }
+        final boolean scanStarted = started;
+        final long deadline = System.currentTimeMillis() + 9000L;
+        pollScanAll(scanStarted, deadline, callback);
     }
 
-    private void pollScanAll(final List<ScanResult> cached, final long deadline,
+    private void pollScanAll(final boolean scanStarted, final long deadline,
                              final ScanCallback callback) {
         main.postDelayed(new Runnable() {
             @Override
             public void run() {
                 List<ScanResult> results = allResults();
-                if (!results.isEmpty() || System.currentTimeMillis() >= deadline) {
+                if (!results.isEmpty()) {
                     callback.onResults(results);
                     return;
                 }
-                pollScanAll(cached, deadline, callback);
-            }
-        }, 700L);
-    }
-
-    /** Сканирование, оставлено только одно лучшее сеть Luna (для авто-подключения). */
-    public void scan(final ScanCallback callback) {
-        if (wifi == null) {
-            callback.onFailed("Wi-Fi недоступен");
-            return;
-        }
-        if (!isWifiEnabled()) {
-            callback.onFailed("Wi-Fi выключен. Включите его в настройках телефона.");
-            return;
-        }
-        if (!hasScanPermission()) {
-            callback.onFailed("Не дано разрешение на сканирование Wi-Fi.");
-            return;
-        }
-        try {
-            List<ScanResult> cached = bestResults();
-            if (!cached.isEmpty()) {
-                callback.onResults(cached);
-            }
-            if (!wifi.startScan()) {
-                if (cached.isEmpty()) {
-                    callback.onResults(new ArrayList<ScanResult>());
-                }
-                return;
-            }
-            final long deadline = System.currentTimeMillis() + 8000L;
-            pollScan(cached, deadline, callback);
-        } catch (SecurityException e) {
-            callback.onFailed("Не получено разрешение на сканирование Wi-Fi");
-        }
-    }
-
-    private void pollScan(final List<ScanResult> cached, final long deadline,
-                          final ScanCallback callback) {
-        main.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                List<ScanResult> results = bestResults();
-                if (!results.isEmpty() || System.currentTimeMillis() >= deadline) {
-                    callback.onResults(results);
+                if (System.currentTimeMillis() >= deadline) {
+                    // Ничего не найдено. Если сканирование не запустилось — объясняем, как
+                    // заставить работу (перезагрузка Wi-Fi часто помогает на MIUI/HyperOS).
+                    if (!scanStarted) {
+                        callback.onFailed("Не удалось запустить сканирование Wi-Fi. "
+                                + "Выключите и снова включите Wi-Fi и попробуйте.");
+                    } else {
+                        callback.onResults(new ArrayList<ScanResult>());
+                    }
                     return;
                 }
-                pollScan(cached, deadline, callback);
+                pollScanAll(scanStarted, deadline, callback);
             }
         }, 700L);
     }
@@ -236,23 +198,6 @@ public final class WifiConnector {
             });
         } catch (SecurityException e) {
             Log.w(TAG, "Risultati della scansione non leggibili: " + e.getMessage());
-        }
-        return out;
-    }
-
-    /** Лучшая из видимых сетей Luna (одна, сильнее всего). */
-    private List<ScanResult> bestResults() {
-        List<ScanResult> out = new ArrayList<ScanResult>();
-        ScanResult best = null;
-        for (ScanResult result : allResults()) {
-            if (result != null && isLunaSsid(result.SSID)) {
-                if (best == null || result.level > best.level) {
-                    best = result;
-                }
-            }
-        }
-        if (best != null) {
-            out.add(best);
         }
         return out;
     }

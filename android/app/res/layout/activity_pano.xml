@@ -53,7 +53,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="24"
                     android:textColor="@color/text" />
 
@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="18"
                     android:textColor="@color/text" />
 
@@ -73,7 +73,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="12"
                     android:textColor="@color/text" />
 
@@ -83,7 +83,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round"
+                    android:background="@drawable/bg_button"
                     android:text="36"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -193,7 +193,7 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_round_accent"
+            android:background="@drawable/bg_button_accent"
             android:text="@string/pano_start"
             android:textColor="@color/background"
             android:textStyle="bold" />
@@ -203,7 +203,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_round"
+            android:background="@drawable/bg_button"
             android:text="@string/pano_download"
             android:textColor="@color/text" />
 
@@ -220,7 +220,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_round"
+            android:background="@drawable/bg_button"
             android:text="@string/pano_export"
             android:textColor="@color/text" />
 
@@ -229,7 +229,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_round"
+            android:background="@drawable/bg_button"
             android:text="@string/pano_export_csv"
             android:textColor="@color/text" />
 
@@ -238,7 +238,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_round_accent"
+            android:background="@drawable/bg_button_accent"
             android:text="@string/pano_export_job"
             android:textColor="@color/background"
             android:textStyle="bold" />

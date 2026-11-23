@@ -5,7 +5,7 @@ public final class BuildConfig {
     public static final boolean DEBUG = false;
     public static final String APPLICATION_ID = "com.panoluna.app";
     public static final String VERSION_NAME = "1.0";
-    public static final int VERSION_CODE = 4;
+    public static final int VERSION_CODE = 5;
 
     private BuildConfig() {
     }
