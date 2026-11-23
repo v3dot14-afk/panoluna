@@ -60,7 +60,7 @@ public final class PanoLunaApp extends Application {
         connection = new CameraConnection();
         camera = new CameraClient(settings, connection);
         gimbal = new Gimbal(settings);
-        shooter = new PanoShooter(settings, camera, gimbal);
+        shooter = new PanoShooter(this, settings, camera, gimbal);
 
         connection.setListener(new CameraConnection.Listener() {
             @Override
