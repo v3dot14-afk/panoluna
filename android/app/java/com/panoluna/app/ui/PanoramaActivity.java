@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.panoluna.app.PanoLunaApp;
 import com.panoluna.app.R;
@@ -19,13 +20,13 @@ import com.panoluna.app.preview.MjpegPreview;
 import com.panoluna.app.proto.Ucd2;
 
 /**
- * Seconda schermata: il mirino.
+ * Ecrane principale: il mirino con anteprima dal vivo, la levetta del gimbal e i comandi
+ * della panoramica di 24 scatti — tondi, con una sola pictogramma, senza scritte.
  *
- * Sopra l'anteprima dal vivo, a destra la levetta del gimbal, in basso al centro i quattro
- * comandi della panoramica — tondi, con una sola pictogramma, senza scritte. In fondo la
- * barra con le quattro sezioni dell'app.
+ * Tutti i gestori di azioni sono protetti: nessuna eccezione durante un comando (gimbal,
+ * scatto) deve far cadere l'app.
  */
-public final class MainActivity extends Activity {
+public final class PanoramaActivity extends Activity {
 
     private PanoLunaApp app;
     private MjpegPreview preview;
@@ -51,11 +52,12 @@ public final class MainActivity extends Activity {
     private final Runnable joystickTick = new Runnable() {
         @Override
         public void run() {
-            if (!app.isCameraConnected()) {
-                return;
-            }
-            if (joystickActive) {
-                app.gimbal().setVelocity(joyPan, joyTilt, app.camera());
+            try {
+                if (app.isCameraConnected() && joystickActive) {
+                    app.gimbal().setVelocity(joyPan, joyTilt, app.camera());
+                }
+            } catch (Throwable ignored) {
+                // nessun comando deve cadere l'app
             }
             timer.postDelayed(this, 25L);
         }
@@ -63,29 +65,45 @@ public final class MainActivity extends Activity {
 
     private final PanoShooter.Listener shooterListener = new PanoShooter.Listener() {
         @Override
-        public void onStateChanged(PanoShooter.State state) {
-            applyState(state);
+        public void onStateChanged(final PanoShooter.State state) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    applyState(state);
+                }
+            });
         }
 
         @Override
-        public void onProgress(int done, int total) {
-            counter.setText(getString(R.string.main_shots, done, total));
-            progress.setMax(total);
-            progress.setProgress(done);
+        public void onProgress(final int done, final int total) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    counter.setText(getString(R.string.main_shots, done, total));
+                    progress.setMax(total);
+                    progress.setProgress(done);
+                }
+            });
         }
 
         @Override
         public void onShot(int index, String uri, float pan, float tilt) {
-            log("Scatto " + (index + 1) + " ok");
+            log("Снимок " + (index + 1) + " ok");
         }
 
         @Override
-        public void onError(String message) {
+        public void onError(final String message) {
             log("Ошибка: " + message);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(PanoramaActivity.this, message, Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
         @Override
-        public void onLog(String message) {
+        public void onLog(final String message) {
             log(message);
         }
     };
@@ -93,35 +111,49 @@ public final class MainActivity extends Activity {
     private final PanoLunaApp.ConnectionListener connectionListener =
             new PanoLunaApp.ConnectionListener() {
                 @Override
-                public void onConnectionStateChanged(boolean connected, String reason) {
-                    applyConnection(connected, reason);
+                public void onConnectionStateChanged(final boolean connected, final String reason) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            applyConnection(connected, reason);
+                        }
+                    });
                 }
 
                 @Override
                 public void onNotification(Ucd2.Frame frame) {
-                    if (frame == null) {
+                    if (frame == null || frame.code != NOTIFICATION_BATTERY_UPDATE) {
                         return;
                     }
-                    if (frame.code == Ucd2FrameCodes.NOTIFICATION_BATTERY_UPDATE) {
+                    try {
                         Integer level = new com.panoluna.app.proto.Proto.Reader(frame.payload)
                                 .intOrNull(2);
                         Integer scale = new com.panoluna.app.proto.Proto.Reader(frame.payload)
                                 .intOrNull(3);
                         if (level != null) {
                             int full = scale == null || scale <= 0 ? 100 : scale;
-                            batteryText.setText(getString(R.string.main_battery,
-                                    Math.max(0, Math.min(100, level * 100 / full))));
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    batteryText.setText(getString(R.string.main_battery,
+                                            Math.max(0, Math.min(100, level * 100 / full))));
+                                }
+                            });
                         }
+                    } catch (Throwable ignored) {
+                        // non fallire l'app su una notifica malformata
                     }
                 }
             };
+
+    private static final int NOTIFICATION_BATTERY_UPDATE = 8195;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = PanoLunaApp.get(this);
         app.applyTheme(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_panorama);
         preview = new MjpegPreview();
 
         previewView = findViewById(R.id.preview);
@@ -152,32 +184,49 @@ public final class MainActivity extends Activity {
                 joystickActive = false;
                 joyPan = 0f;
                 joyTilt = 0f;
-                app.gimbal().stop(app.camera());
+                try {
+                    app.gimbal().stop(app.camera());
+                } catch (Throwable ignored) {
+                }
             }
         });
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.shooter().start(PanoPlan.shot24());
+                try {
+                    app.shooter().start(PanoPlan.shot24());
+                } catch (Throwable t) {
+                    Toast.makeText(PanoramaActivity.this, "Старт не удалось: " + t.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.shooter().pause();
+                try {
+                    app.shooter().pause();
+                } catch (Throwable ignored) {
+                }
             }
         });
         resumeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.shooter().resume();
+                try {
+                    app.shooter().resume();
+                } catch (Throwable ignored) {
+                }
             }
         });
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.shooter().stop();
+                try {
+                    app.shooter().stop();
+                } catch (Throwable ignored) {
+                }
             }
         });
 
@@ -185,32 +234,14 @@ public final class MainActivity extends Activity {
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, SplashActivity.class));
+                startActivity(new Intent(PanoramaActivity.this, SplashActivity.class));
             }
         });
 
-        findViewById(R.id.btn_pano).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, PanoActivity.class));
-            }
-        });
-        findViewById(R.id.btn_camera_settings).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, CameraSettingsActivity.class));
-            }
-        });
-        findViewById(R.id.btn_gallery).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, GalleryActivity.class));
-            }
-        });
         findViewById(R.id.btn_app_settings).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                startActivity(new Intent(PanoramaActivity.this, SettingsActivity.class));
             }
         });
 
@@ -238,26 +269,45 @@ public final class MainActivity extends Activity {
     }
 
     private void startPreview() {
-        previewOff.setVisibility(View.VISIBLE);
-        preview.start(app.settings().getHost(), app.getWifiNetwork(),
-                new MjpegPreview.Listener() {
-                    @Override
-                    public void onFrame(Bitmap frame) {
-                        previewOff.setVisibility(View.GONE);
-                        previewView.setImageBitmap(frame);
-                    }
+        try {
+            previewOff.setVisibility(View.VISIBLE);
+            preview.start(app.settings().getHost(), app.getWifiNetwork(),
+                    new MjpegPreview.Listener() {
+                        @Override
+                        public void onFrame(Bitmap frame) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    previewOff.setVisibility(View.GONE);
+                                    previewView.setImageBitmap(frame);
+                                }
+                            });
+                        }
 
-                    @Override
-                    public void onError(String message) {
-                        previewOff.setText(message);
-                    }
+                        @Override
+                        public void onError(final String message) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    previewOff.setText(message);
+                                }
+                            });
+                        }
 
-                    @Override
-                    public void onClosed() {
-                        previewOff.setVisibility(View.VISIBLE);
-                        previewOff.setText(R.string.main_preview_off);
-                    }
-                });
+                        @Override
+                        public void onClosed() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    previewOff.setVisibility(View.VISIBLE);
+                                    previewOff.setText(R.string.main_preview_off);
+                                }
+                            });
+                        }
+                    });
+        } catch (Throwable t) {
+            previewOff.setText("Предпросмотр недоступен: " + t.getMessage());
+        }
     }
 
     private void applyConnection(boolean connected, String reason) {
@@ -284,7 +334,8 @@ public final class MainActivity extends Activity {
         resumeButton.setAlpha(resumeButton.isEnabled() ? 1f : 0.35f);
         stopButton.setAlpha(stopButton.isEnabled() ? 1f : 0.35f);
 
-        if (state == PanoShooter.State.IDLE || state == PanoShooter.State.STOPPED) {
+        if (state == PanoShooter.State.IDLE || state == PanoShooter.State.STOPPED
+                || state == PanoShooter.State.DONE || state == PanoShooter.State.ERROR) {
             counter.setText("");
             progress.setProgress(0);
         }
@@ -295,12 +346,12 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void log(String message) {
-        logText.setText(message);
-    }
-
-    /** Costanti di notifica usate qui, tenute insieme ai codici del protocollo. */
-    private static final class Ucd2FrameCodes {
-        static final int NOTIFICATION_BATTERY_UPDATE = 8195;
+    private void log(final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                logText.setText(message);
+            }
+        });
     }
 }

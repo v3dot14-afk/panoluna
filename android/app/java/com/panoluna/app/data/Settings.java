@@ -20,9 +20,6 @@ public final class Settings {
     private static final String KEY_KEEP_ALIVE = "keep_alive_seconds";
     private static final String KEY_TIMEOUT = "request_timeout_ms";
 
-    private static final String KEY_WIFI_SSID = "wifi_ssid";
-    private static final String KEY_WIFI_PASSWORD = "wifi_password";
-
     private static final String KEY_GIMBAL_SPEED = "gimbal_speed";
     private static final String KEY_PAN_SCALE = "pan_angular_scale";
     private static final String KEY_TILT_SCALE = "tilt_angular_scale";
@@ -97,32 +94,6 @@ public final class Settings {
 
     public void setRequestTimeoutMs(long value) {
         prefs.edit().putLong(KEY_TIMEOUT, value).apply();
-    }
-
-    // ---- Wi-Fi della camera ----
-
-    public String getWifiSsid() {
-        return prefs.getString(KEY_WIFI_SSID, "");
-    }
-
-    public String getWifiPassword() {
-        return prefs.getString(KEY_WIFI_PASSWORD, "");
-    }
-
-    public void rememberWifi(String ssid, String password) {
-        prefs.edit()
-                .putString(KEY_WIFI_SSID, ssid == null ? "" : ssid)
-                .putString(KEY_WIFI_PASSWORD, password == null ? "" : password)
-                .apply();
-    }
-
-    /** Cancella SSID e password ricordati. Usato da Impostazioni. */
-    public void forgetWifi() {
-        prefs.edit().remove(KEY_WIFI_SSID).remove(KEY_WIFI_PASSWORD).apply();
-    }
-
-    public boolean hasRememberedWifi() {
-        return getWifiSsid().length() > 0;
     }
 
     // ---- Gimbal ----

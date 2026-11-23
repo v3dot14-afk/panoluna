@@ -1,15 +1,12 @@
 package com.panoluna.app.ui;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.panoluna.app.BuildConfig;
 import com.panoluna.app.PanoLunaApp;
@@ -17,10 +14,8 @@ import com.panoluna.app.R;
 import com.panoluna.app.data.Settings;
 
 /**
- * Настройки приложения: камера, учётные данные Wi-Fi (с удалением), гимбал, данные и тема.
- *
- * «Удалить» здесь — это две вещи: забыть сеть и пароль камеры, и стереть все данные приложения.
- * Это две отдельные кнопки, чтобы случайно не потерять настройки.
+ * Настройки приложения: камера (IP/порт), гимбал и тема.
+ * Сетевая пара Wi-Fi больше не сохраняется: подключение к сети камеры делается вручную.
  */
 public final class SettingsActivity extends Activity {
 
@@ -33,9 +28,6 @@ public final class SettingsActivity extends Activity {
     private EditText tiltMin;
     private EditText tiltMax;
     private EditText scale;
-    private CheckBox invertPan;
-    private CheckBox invertTilt;
-    private TextView wifiState;
     private Switch darkTheme;
 
     @Override
@@ -53,9 +45,6 @@ public final class SettingsActivity extends Activity {
         tiltMin = findViewById(R.id.set_tilt_min);
         tiltMax = findViewById(R.id.set_tilt_max);
         scale = findViewById(R.id.set_scale);
-        invertPan = findViewById(R.id.set_invert_pan);
-        invertTilt = findViewById(R.id.set_invert_tilt);
-        wifiState = findViewById(R.id.set_wifi_state);
         darkTheme = findViewById(R.id.set_dark_theme);
 
         host.setText(app.settings().getHost());
@@ -66,8 +55,6 @@ public final class SettingsActivity extends Activity {
         tiltMin.setText(String.valueOf(app.settings().getTiltMin()));
         tiltMax.setText(String.valueOf(app.settings().getTiltMax()));
         scale.setText(String.valueOf(app.settings().getPanScale()));
-        invertPan.setChecked(app.settings().isInvertPan());
-        invertTilt.setChecked(app.settings().isInvertTilt());
         darkTheme.setChecked(app.settings().darkTheme());
 
         darkTheme.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
@@ -79,24 +66,11 @@ public final class SettingsActivity extends Activity {
             }
         });
 
-        paintWifi();
-
-        Button forget = findViewById(R.id.set_wifi_forget);
-        forget.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                app.settings().forgetWifi();
-                paintWifi();
-                Toast.makeText(SettingsActivity.this, R.string.settings_wifi_forget_done,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-
         Button clear = findViewById(R.id.set_clear);
         clear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new AlertDialog.Builder(SettingsActivity.this)
+                new android.app.AlertDialog.Builder(SettingsActivity.this)
                         .setTitle(R.string.settings_clear)
                         .setNegativeButton(android.R.string.cancel, null)
                         .setPositiveButton(android.R.string.ok,
@@ -105,9 +79,6 @@ public final class SettingsActivity extends Activity {
                                     public void onClick(android.content.DialogInterface dialog,
                                                         int which) {
                                         app.settings().clearAll();
-                                        Toast.makeText(SettingsActivity.this,
-                                                R.string.settings_clear_done,
-                                                Toast.LENGTH_SHORT).show();
                                         finish();
                                     }
                                 })
@@ -136,18 +107,6 @@ public final class SettingsActivity extends Activity {
                 parseFloat(tiltMax.getText().toString(), 120f));
         app.settings().setAngularScale(parseFloat(scale.getText().toString(), 1.235f),
                 parseFloat(scale.getText().toString(), 1.235f));
-        app.settings().raw().edit()
-                .putBoolean("invert_pan", invertPan.isChecked())
-                .putBoolean("invert_tilt", invertTilt.isChecked())
-                .apply();
-    }
-
-    private void paintWifi() {
-        if (app.settings().hasRememberedWifi()) {
-            wifiState.setText(app.settings().getWifiSsid());
-        } else {
-            wifiState.setText(R.string.connect_state_idle);
-        }
     }
 
     private static int parseInt(String value, int fallback) {

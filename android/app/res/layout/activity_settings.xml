@@ -143,40 +143,6 @@
                 android:textSize="15sp" />
         </LinearLayout>
 
-        <!-- Wi-Fi -->
-        <LinearLayout
-            style="@style/Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_wifi"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/set_wifi_state"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/text"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/set_wifi_forget"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_button"
-                android:text="@string/settings_wifi_forget"
-                android:textColor="@color/text" />
-        </LinearLayout>
-
         <!-- Gimbal -->
         <LinearLayout
             style="@style/Card"
@@ -270,21 +236,6 @@
                 android:textColor="@color/text"
                 android:textColorHint="@color/text_dim"
                 android:textSize="15sp" />
-
-            <CheckBox
-                android:id="@+id/set_invert_pan"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/settings_invert_pan"
-                android:textColor="@color/text" />
-
-            <CheckBox
-                android:id="@+id/set_invert_tilt"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_invert_tilt"
-                android:textColor="@color/text" />
         </LinearLayout>
 
         <!-- Данные -->
@@ -311,31 +262,6 @@
                 android:background="@drawable/bg_button"
                 android:text="@string/settings_clear"
                 android:textColor="@color/warn" />
-        </LinearLayout>
-
-        <!-- Темпляты -->
-        <LinearLayout
-            style="@style/Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_templates"
-                android:textColor="@color/accent"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/settings_templates_info"
-                android:textColor="@color/text_dim"
-                android:textSize="13sp" />
         </LinearLayout>
 
         <!-- О приложении -->

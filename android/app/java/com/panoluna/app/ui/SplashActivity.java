@@ -117,7 +117,7 @@ public final class SplashActivity extends Activity implements PanoLunaApp.Connec
             return;
         }
         launched = true;
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+        Intent intent = new Intent(SplashActivity.this, PanoramaActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
         finish();

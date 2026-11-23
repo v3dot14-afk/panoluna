@@ -27,6 +27,7 @@
             android:textColor="@color/text_dim"
             android:textSize="14sp" />
 
+        <!-- Верхняя строка состояния -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -56,6 +57,7 @@
                 android:src="@drawable/ic_link" />
         </LinearLayout>
 
+        <!-- Прогресс панорамы -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,6 +87,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Круглый гимбал -->
         <com.panoluna.app.ui.JoystickView
             android:id="@+id/joystick"
             android:layout_width="168dp"
@@ -92,6 +95,7 @@
             android:layout_gravity="end|center_vertical"
             android:layout_marginEnd="16dp" />
 
+        <!-- Кнопки управления панорамой (пиктограммы) -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -102,21 +106,21 @@
             <ImageButton
                 android:id="@+id/btn_start"
                 style="@style/RoundButton.Accent"
-                android:layout_marginEnd="18dp"
+                android:layout_marginEnd="14dp"
                 android:contentDescription="@string/main_pano_start"
                 android:src="@drawable/ic_shutter" />
 
             <ImageButton
                 android:id="@+id/btn_pause"
                 style="@style/RoundButton"
-                android:layout_marginEnd="18dp"
+                android:layout_marginEnd="14dp"
                 android:contentDescription="@string/main_pano_pause"
                 android:src="@drawable/ic_pause" />
 
             <ImageButton
                 android:id="@+id/btn_resume"
                 style="@style/RoundButton"
-                android:layout_marginEnd="18dp"
+                android:layout_marginEnd="14dp"
                 android:contentDescription="@string/main_pano_resume"
                 android:src="@drawable/ic_play" />
 
@@ -127,7 +131,6 @@
                 android:src="@drawable/ic_stop" />
         </LinearLayout>
 
-        <!-- Sotto i comandi rotondi: la riga di stato non deve coprirli. -->
         <TextView
             android:id="@+id/log_text"
             android:layout_width="match_parent"
@@ -140,29 +143,11 @@
             android:textSize="11sp" />
     </FrameLayout>
 
+    <!-- Нижняя навигация: только настройки -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@color/surface"
+        android:layout_height="64dp"
         android:orientation="horizontal">
-
-        <ImageButton
-            android:id="@+id/btn_pano"
-            style="@style/BottomButton"
-            android:contentDescription="@string/main_pano_control"
-            android:src="@drawable/ic_pano" />
-
-        <ImageButton
-            android:id="@+id/btn_camera_settings"
-            style="@style/BottomButton"
-            android:contentDescription="@string/main_camera_settings"
-            android:src="@drawable/ic_camera" />
-
-        <ImageButton
-            android:id="@+id/btn_gallery"
-            style="@style/BottomButton"
-            android:contentDescription="@string/main_gallery"
-            android:src="@drawable/ic_gallery" />
 
         <ImageButton
             android:id="@+id/btn_app_settings"
@@ -170,4 +155,5 @@
             android:contentDescription="@string/main_app_settings"
             android:src="@drawable/ic_settings" />
     </LinearLayout>
+
 </LinearLayout>

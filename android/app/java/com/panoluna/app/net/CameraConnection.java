@@ -244,6 +244,9 @@ public final class CameraConnection {
                 if (!userClosed) {
                     Log.w(TAG, "Socket закрыт: " + e.getMessage());
                 }
+            } catch (Throwable t) {
+                // Ничего неожиданное в цикле чтения не должно ронять приложение.
+                Log.w(TAG, "Ошибка в цикле чтения: " + t);
             } finally {
                 connected = false;
                 failPending("Connessione persa");
@@ -257,26 +260,32 @@ public final class CameraConnection {
         }
 
         private void dispatch(Ucd2.Frame frame) {
-            if (frame.type == Ucd2.TYPE_MEDIA) {
-                if (frame.substream == Ucd2.MEDIA_VIDEO && frame.payload.length > 0) {
-                    Listener l = listener;
-                    if (l != null) {
-                        l.onVideoFrame(frame.payload);
+            try {
+                if (frame.type == Ucd2.TYPE_MEDIA) {
+                    if (frame.substream == Ucd2.MEDIA_VIDEO && frame.payload.length > 0) {
+                        Listener l = listener;
+                        if (l != null) {
+                            l.onVideoFrame(frame.payload);
+                        }
                     }
+                    return;
                 }
-                return;
-            }
-            if (!frame.isCommandFrame()) {
-                return;
-            }
-            CompletableFuture<Ucd2.Frame> waiter = pending.remove(frame.requestId);
-            if (waiter != null) {
-                waiter.complete(frame);
-                return;
-            }
-            Listener l = listener;
-            if (l != null) {
-                l.onNotification(frame);
+                if (!frame.isCommandFrame()) {
+                    return;
+                }
+                CompletableFuture<Ucd2.Frame> waiter = pending.remove(frame.requestId);
+                if (waiter != null) {
+                    waiter.complete(frame);
+                    return;
+                }
+                Listener l = listener;
+                if (l != null) {
+                    l.onNotification(frame);
+                }
+            } catch (Throwable t) {
+                // NISSUNA eccezione nel gestore del frame deve far cadere l'app:
+                // il thread di lettura continua a lavorare.
+                Log.w(TAG, "Gestore del frame terminato con eccezione: " + t);
             }
         }
     }

@@ -2,14 +2,16 @@ package com.panoluna.app;
 
 import android.app.Application;
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.util.Log;
 
 import com.panoluna.app.camera.CameraClient;
 import com.panoluna.app.camera.Gimbal;
 import com.panoluna.app.camera.PanoShooter;
 import com.panoluna.app.data.Settings;
-import com.panoluna.app.media.CameraDownloader;
 import com.panoluna.app.net.CameraConnection;
 import com.panoluna.app.proto.Ucd2;
 
@@ -17,9 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Unica istanza dell'app: detiene le impostazioni, la connessione alla camera, il gimbal e la
- * macchina della panoramica. Le activity le prendono da qui, cosi' lo stato sopravvive al
- * cambio di schermata.
+ * Unica istanza dell'app: impostazioni, connessione alla camera, gimbal e macchina della
+ * panoramica. Le activity le prendono da qui, cosi' lo stato sopravvive al cambio di schermata.
+ *
+ * La rete della camera non ha Internet: il socket di controllo e l'anteprima HTTP devono essere
+ * legati alla Wi-Fi corrente e la rete mantenuta registrata via NetworkRequest, altrimenti
+ * Android la lascia e la connessione a 192.168.42.1 cade (vedi PROTOCOL.md e il riferimento
+ * persoft/lunaultra). L'utente si collega alla Wi-Fi della camera manualmente; qui la si
+ * cerca, la si lega al socket e la si pianta.
  */
 public final class PanoLunaApp extends Application {
 
@@ -36,9 +43,11 @@ public final class PanoLunaApp extends Application {
     private CameraClient camera;
     private Gimbal gimbal;
     private PanoShooter shooter;
-    private CameraDownloader downloader;
 
+    private final ConnectivityManager connectivity =
+            (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
     private Network wifiNetwork;
+    private ConnectivityManager.NetworkCallback pinCallback;
     private final List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
 
     @Override
@@ -49,7 +58,6 @@ public final class PanoLunaApp extends Application {
         camera = new CameraClient(settings, connection);
         gimbal = new Gimbal(settings);
         shooter = new PanoShooter(settings, camera, gimbal);
-        downloader = new CameraDownloader();
 
         connection.setListener(new CameraConnection.Listener() {
             @Override
@@ -71,10 +79,7 @@ public final class PanoLunaApp extends Application {
         // Тему применяют сами активити через applyTheme(activity).
     }
 
-    /**
-     * Применяет тёмную/светлую тему из настроек. Вызывается до setContentView в активити:
-     * выбирает нужный Material-вариант темы и настраивает ночный режим приложения.
-     */
+    /** Применяет тёмную/светлую тему из настроек. Вызывается до setContentView в активити. */
     public void applyTheme(android.app.Activity activity) {
         try {
             int mode = settings.themeMode();
@@ -134,16 +139,8 @@ public final class PanoLunaApp extends Application {
         return shooter;
     }
 
-    public CameraDownloader downloader() {
-        return downloader;
-    }
-
     public Network getWifiNetwork() {
         return wifiNetwork;
-    }
-
-    public void setWifiNetwork(Network network) {
-        wifiNetwork = network;
     }
 
     public void addConnectionListener(ConnectionListener listener) {
@@ -154,11 +151,78 @@ public final class PanoLunaApp extends Application {
         listeners.remove(listener);
     }
 
-    /** Apre la sessione di controllo UCD2 verso la camera по IP. Сеть берётся активная:
-     *  пользователь сам подключается к Wi-Fi камеры, поэтому socket идёт по текущей сети. */
+    /**
+     * Cerca la Wi-Fi corrente e la pianta: senza una richiesta in piedi Android la considera
+     * inutile (nessun Internet) e la lascia appena l'app passa in secondo piano.
+     */
+    private Network currentWifiNetwork() {
+        if (connectivity == null) {
+            return null;
+        }
+        try {
+            for (Network candidate : connectivity.getAllNetworks()) {
+                NetworkCapabilities caps = connectivity.getNetworkCapabilities(candidate);
+                if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    return candidate;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Поиск Wi-Fi не удался: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private void pinWifi(Network network) {
+        releasePin();
+        if (network == null || connectivity == null) {
+            return;
+        }
+        pinCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(Network value) {
+                wifiNetwork = value;
+            }
+
+            @Override
+            public void onLost(Network lost) {
+                if (wifiNetwork == lost) {
+                    wifiNetwork = null;
+                }
+            }
+        };
+        try {
+            NetworkRequest request = new NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+            connectivity.requestNetwork(request, pinCallback);
+            wifiNetwork = network;
+        } catch (Exception e) {
+            Log.w(TAG, "Привязка Wi-Fi не удалась: " + e.getMessage());
+        }
+    }
+
+    private void releasePin() {
+        if (pinCallback != null && connectivity != null) {
+            try {
+                connectivity.unregisterNetworkCallback(pinCallback);
+            } catch (Exception ignored) {
+                // уже разрегистрирован
+            }
+            pinCallback = null;
+        }
+    }
+
+    /**
+     * Apre la sessione di controllo UCD2 verso la camera по IP. La Wi-Fi corrente viene
+     * cercata, piantata e il socket ad essa legato: così la sessione resta viva e gli
+     * comandi (gimbal, scatto) non precipitano per caduta della rete.
+     */
     public boolean connectCamera() {
         try {
-            connection.connect(settings.getHost(), settings.getPort(), null, 6000L);
+            Network network = currentWifiNetwork();
+            pinWifi(network);
+            connection.connect(settings.getHost(), settings.getPort(), network, 6000L);
             dispatchState(true, null);
             return true;
         } catch (Exception e) {
@@ -183,7 +247,11 @@ public final class PanoLunaApp extends Application {
             h.post(new Runnable() {
                 @Override
                 public void run() {
-                    listener.onConnectionStateChanged(connected, reason);
+                    try {
+                        listener.onConnectionStateChanged(connected, reason);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Ошибка слушателя состояния: " + e.getMessage());
+                    }
                 }
             });
         }
@@ -195,7 +263,11 @@ public final class PanoLunaApp extends Application {
             @Override
             public void run() {
                 for (ConnectionListener listener : new ArrayList<ConnectionListener>(listeners)) {
-                    listener.onNotification(frame);
+                    try {
+                        listener.onNotification(frame);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Ошибка слушателя уведомления: " + e.getMessage());
+                    }
                 }
             }
         });

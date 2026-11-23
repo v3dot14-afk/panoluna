@@ -12,5 +12,3 @@ Tilt: -52.0 .. 52.0 градусов
    a) проект PanoLuna_24scatti.p2vr, который указывает на equirectangular
       сшитую в PTGui (переименуйте в PanoLuna_24scatti_equirectangular.jpg).
    b) Pro > File > Import Papywizard, с PanoLuna_24scatti.papywizard.xml.
-
-3) PanoLuna_24scatti.csv - таблица углов по строкам.

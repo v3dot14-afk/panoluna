@@ -127,22 +127,6 @@ public final class PanoPlan {
     /** Focale equivalente 35 mm che produce il campo misurato, in 4:3 full frame. */
     public static final float EQUIVALENT_FOCAL_MM = 21.5f;
 
-    /** CSV con gli angoli: e' la tabella che PTGui Papywizard e PTGui stesso possono leggere. */
-    public String toCsv() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("index;row;column;pan_deg;pitch_deg;uri\n");
-        for (Shot s : shots) {
-            sb.append(s.index).append(';')
-                    .append(s.row + 1).append(';')
-                    .append(s.column + 1).append(';')
-                    .append(fmt(s.pan)).append(';')
-                    .append(fmt(s.tilt)).append(';')
-                    .append(s.uri == null ? "" : s.uri)
-                    .append('\n');
-        }
-        return sb.toString();
-    }
-
     /**
      * Template PTGui: i 24 punti con yaw/pitch, la lente rettilinea e il campo misurato.
      * Le immagini non sono incluse: PTGui applica i parametri per indice alle foto caricate.
