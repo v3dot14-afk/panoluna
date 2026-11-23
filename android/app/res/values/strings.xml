@@ -2,7 +2,16 @@
 <resources>
     <string name="app_name">PanoLuna</string>
 
-    <!-- Экран 1: подключение по Wi-Fi -->
+    <!-- Экран 1: заставка и подключение по IP -->
+    <string name="splash_subtitle">Insta360 Luna Ultra</string>
+    <string name="splash_status_idle">Нажмите «Подключиться», чтобы найти камеру</string>
+    <string name="splash_status_connecting">Поиск камеры по IP и подключение…</string>
+    <string name="splash_connect">Подключиться</string>
+    <string name="splash_settings">Настройки</string>
+    <string name="splash_connect_failed">Не удалось подключиться к камере</string>
+    <string name="splash_hint">Сначала подключите телефон к Wi-Fi «Luna Ultra …» в настройках, затем нажмите «Подключиться».</string>
+
+    <!-- Экран 1: подключение по Wi-Fi ( legacy ) -->
     <string name="connect_title">PanoLuna</string>
     <string name="connect_subtitle">Insta360 Luna Ultra</string>
     <string name="connect_scan">Найти Wi-Fi камеры</string>

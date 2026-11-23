@@ -154,10 +154,11 @@ public final class PanoLunaApp extends Application {
         listeners.remove(listener);
     }
 
-    /** Apre la sessione di controllo UCD2 verso la camera. */
+    /** Apre la sessione di controllo UCD2 verso la camera по IP. Сеть берётся активная:
+     *  пользователь сам подключается к Wi-Fi камеры, поэтому socket идёт по текущей сети. */
     public boolean connectCamera() {
         try {
-            connection.connect(settings.getHost(), settings.getPort(), wifiNetwork, 6000L);
+            connection.connect(settings.getHost(), settings.getPort(), null, 6000L);
             dispatchState(true, null);
             return true;
         } catch (Exception e) {
