@@ -12,16 +12,13 @@ import sys
 import zlib
 
 
-def _local_header(name, crc, csize, usize, method, align, mtime):
+def _local_header(name, crc, csize, usize, method, align, mtime, abs_offset):
     name_b = name.encode("utf-8")
-    # data must start at an alignment boundary relative to the file start
-    base = 30 + len(name_b)
+    # Padding lives in the extra field and must bring the *data* offset
+    # (abs_offset + 30 + name + extra) onto the alignment boundary.
+    base = abs_offset + 30 + len(name_b)
     pad = (-base) % align
-    extra = b"\x00\x00" + b"\x00" * pad  # keep at least a 2 byte extra field
-    # extra field length must be even for the padding trick to work cleanly
-    if len(extra) % 2:
-        extra += b"\x00"
-    flags = 0x0008 if method == 0 else 0x0000  # bit 3: data descriptor (unused, but harmless)
+    extra = b"\x00" * pad
     flags = 0x0000
     hdr = struct.pack(
         "<IHHHHHIIIHH",
@@ -56,9 +53,12 @@ def build(entries, out_path, page_align_so=False):
             payload = data
             crc = zlib.crc32(data) & 0xFFFFFFFF
         offset = len(out)
-        out += _local_header(name, crc, len(payload), len(data), method, align, 0)
-        out += payload
         name_b = name.encode("utf-8")
+        base = offset + 30 + len(name_b)
+        pad = (-base) % align
+        extra = b"\x00" * pad
+        out += _local_header(name, crc, len(payload), len(data), method, align, 0, offset)
+        out += payload
         central += struct.pack(
             "<IHHHHHHIIIHHHHHII",
             0x02014B50,
@@ -71,12 +71,14 @@ def build(entries, out_path, page_align_so=False):
             len(payload),
             len(data),
             len(name_b),
-            0, 0, 0,
+            len(extra),
+            0, 0,
             0,
             0,
             offset,
         )
         central += name_b
+        central += extra
     cd_offset = len(out)
     out += central
     out += struct.pack(
