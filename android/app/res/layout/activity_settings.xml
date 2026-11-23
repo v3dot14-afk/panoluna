@@ -9,7 +9,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="28dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -19,13 +22,69 @@
             android:textSize="22sp"
             android:textStyle="bold" />
 
+        <!-- Внешний вид: переключение темы -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_appearance"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                style="@style/SwitchRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/SwitchLabel"
+                        android:text="@string/settings_theme_dark" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/settings_theme_desc"
+                        android:textColor="@color/text_dim"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <Switch
+                    android:id="@+id/set_dark_theme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleX="1.05"
+                    android:scaleY="1.05"
+                    android:thumbTint="@color/accent"
+                    android:trackTint="@color/surface_high"
+                    android:switchMinWidth="52dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Камера -->
+        <LinearLayout
+            style="@style/Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -44,8 +103,12 @@
                 android:id="@+id/set_host"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_field"
+                android:padding="12dp"
                 android:inputType="text"
-                android:textColor="@color/text" />
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_dim"
+                android:textSize="15sp" />
 
             <TextView
                 style="@style/FieldLabel"
@@ -56,8 +119,12 @@
                 android:id="@+id/set_port"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_field"
+                android:padding="12dp"
                 android:inputType="number"
-                android:textColor="@color/text" />
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_dim"
+                android:textSize="15sp" />
 
             <TextView
                 style="@style/FieldLabel"
@@ -68,17 +135,21 @@
                 android:id="@+id/set_timeout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_field"
+                android:padding="12dp"
                 android:inputType="number"
-                android:textColor="@color/text" />
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_dim"
+                android:textSize="15sp" />
         </LinearLayout>
 
+        <!-- Wi-Fi -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -106,13 +177,13 @@
                 android:textColor="@color/text" />
         </LinearLayout>
 
+        <!-- Gimbal -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -125,6 +196,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -136,6 +208,8 @@
                     android:id="@+id/set_pan_min"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_field"
+                    android:padding="8dp"
                     android:inputType="numberSigned"
                     android:textColor="@color/text" />
 
@@ -143,6 +217,9 @@
                     android:id="@+id/set_pan_max"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_field"
+                    android:padding="8dp"
                     android:inputType="numberSigned"
                     android:textColor="@color/text" />
             </LinearLayout>
@@ -150,6 +227,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -161,6 +239,8 @@
                     android:id="@+id/set_tilt_min"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_field"
+                    android:padding="8dp"
                     android:inputType="numberSigned"
                     android:textColor="@color/text" />
 
@@ -168,26 +248,34 @@
                     android:id="@+id/set_tilt_max"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_field"
+                    android:padding="8dp"
                     android:inputType="numberSigned"
                     android:textColor="@color/text" />
             </LinearLayout>
 
             <TextView
                 style="@style/FieldLabel"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="10dp"
                 android:text="@string/settings_angular_scale" />
 
             <EditText
                 android:id="@+id/set_scale"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_field"
+                android:padding="12dp"
                 android:inputType="numberDecimal"
-                android:textColor="@color/text" />
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_dim"
+                android:textSize="15sp" />
 
             <CheckBox
                 android:id="@+id/set_invert_pan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:text="@string/settings_invert_pan"
                 android:textColor="@color/text" />
 
@@ -199,13 +287,13 @@
                 android:textColor="@color/text" />
         </LinearLayout>
 
+        <!-- Данные -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -225,13 +313,13 @@
                 android:textColor="@color/warn" />
         </LinearLayout>
 
+        <!-- Темпляты -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -250,13 +338,13 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- О приложении -->
         <LinearLayout
+            style="@style/Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"

@@ -7,19 +7,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.panoluna.app.BuildConfig;
 import com.panoluna.app.PanoLunaApp;
 import com.panoluna.app.R;
+import com.panoluna.app.data.Settings;
 
 /**
- * Impostazioni dell'app: fotocamera, credenziali Wi-Fi (con eliminazione), gimbal, dati.
+ * Настройки приложения: камера, учётные данные Wi-Fi (с удалением), гимбал, данные и тема.
  *
- * "Elimina" qui vuol dire due cose: dimenticare la rete e la password della camera, e cancellare
- * tutti i dati dell'app. Sono due pulsanti distinti, cosi' non si perdono le impostazioni per
- * sbaglio.
+ * «Удалить» здесь — это две вещи: забыть сеть и пароль камеры, и стереть все данные приложения.
+ * Это две отдельные кнопки, чтобы случайно не потерять настройки.
  */
 public final class SettingsActivity extends Activity {
 
@@ -35,12 +36,14 @@ public final class SettingsActivity extends Activity {
     private CheckBox invertPan;
     private CheckBox invertTilt;
     private TextView wifiState;
+    private Switch darkTheme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
         app = PanoLunaApp.get(this);
+        app.applyTheme(this);
+        setContentView(R.layout.activity_settings);
 
         host = findViewById(R.id.set_host);
         port = findViewById(R.id.set_port);
@@ -53,6 +56,7 @@ public final class SettingsActivity extends Activity {
         invertPan = findViewById(R.id.set_invert_pan);
         invertTilt = findViewById(R.id.set_invert_tilt);
         wifiState = findViewById(R.id.set_wifi_state);
+        darkTheme = findViewById(R.id.set_dark_theme);
 
         host.setText(app.settings().getHost());
         port.setText(String.valueOf(app.settings().getPort()));
@@ -64,6 +68,16 @@ public final class SettingsActivity extends Activity {
         scale.setText(String.valueOf(app.settings().getPanScale()));
         invertPan.setChecked(app.settings().isInvertPan());
         invertTilt.setChecked(app.settings().isInvertTilt());
+        darkTheme.setChecked(app.settings().darkTheme());
+
+        darkTheme.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(android.widget.CompoundButton buttonView, boolean isChecked) {
+                app.settings().setThemeMode(isChecked ? Settings.THEME_DARK : Settings.THEME_LIGHT);
+                app.applyTheme(SettingsActivity.this);
+                recreate();
+            }
+        });
 
         paintWifi();
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Светлая тема: те же имена, значения для дня. -->
+    <color name="background">#F2F3F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_high">#E9ECEF</color>
+    <color name="text">#1B1F24</color>
+    <color name="text_dim">#6B7280</color>
+    <color name="accent">#F59E0B</color>
+    <color name="accent_dark">#B45309</color>
+    <color name="ok">#16A34A</color>
+    <color name="warn">#DC2626</color>
+    <color name="line">#E2E5EA</color>
+</resources>

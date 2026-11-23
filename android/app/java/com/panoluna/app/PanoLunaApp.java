@@ -68,6 +68,46 @@ public final class PanoLunaApp extends Application {
                 // L'anteprima usata dall'app e' MJPEG via HTTP.
             }
         });
+        // Тему применяют сами активити через applyTheme(activity).
+    }
+
+    /**
+     * Применяет тёмную/светлую тему из настроек. Вызывается до setContentView в активити:
+     * выбирает нужный Material-вариант темы и настраивает ночный режим приложения.
+     */
+    public void applyTheme(android.app.Activity activity) {
+        try {
+            int mode = settings.themeMode();
+            int target;
+            switch (mode) {
+                case Settings.THEME_LIGHT:
+                    target = android.content.res.Configuration.UI_MODE_NIGHT_NO;
+                    break;
+                case Settings.THEME_SYSTEM:
+                    target = (activity.getResources().getConfiguration().uiMode
+                            & android.content.res.Configuration.UI_MODE_NIGHT_MASK);
+                    break;
+                default:
+                    target = android.content.res.Configuration.UI_MODE_NIGHT_YES;
+                    break;
+            }
+            android.content.res.Configuration config = activity.getResources().getConfiguration();
+            int current = config.uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            if (current != target) {
+                android.app.UiModeManager um = (android.app.UiModeManager)
+                        activity.getSystemService(Context.UI_MODE_SERVICE);
+                um.setApplicationNightMode(target);
+            }
+            boolean dark = settings.themeMode() == Settings.THEME_DARK
+                    || (settings.themeMode() == Settings.THEME_SYSTEM
+                    && target == android.content.res.Configuration.UI_MODE_NIGHT_YES);
+            if (activity.getTheme() != null) {
+                activity.setTheme(dark ? com.panoluna.app.R.style.AppTheme
+                        : com.panoluna.app.R.style.AppTheme_Light);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Применение темы не удалось: " + e.getMessage());
+        }
     }
 
     public static PanoLunaApp get(Context context) {

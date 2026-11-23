@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Тёмная тема по умолчанию. Переключение тёмной/светлой темы ведётся через
+         values-night (пара цветов) и UiModeManager.setApplicationNightMode: при смене
+         ночного режима система перевыбирает значения цветов, и layout сохраняет тему. -->
     <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/background</item>
         <item name="android:statusBarColor">@color/background</item>
@@ -10,7 +13,24 @@
         <item name="android:colorAccent">@color/accent</item>
         <item name="android:colorPrimary">@color/surface</item>
         <item name="android:colorPrimaryDark">@color/background</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- Светлая Material-тема (используется при выборе светлой темы). -->
+    <style name="AppTheme_Light" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_dim</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/surface</item>
+        <item name="android:colorPrimaryDark">@color/background</item>
+        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
     </style>
 
     <style name="AppTheme.Transparent">
@@ -18,7 +38,7 @@
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
-    <!-- Pulsante rotondo con icona: nessuna etichetta, solo la pictogramma. -->
+    <!-- Пульт круглый с пиктограммой: без текста, только значок. -->
     <style name="RoundButton">
         <item name="android:layout_width">56dp</item>
         <item name="android:layout_height">56dp</item>
@@ -72,6 +92,22 @@
         <item name="android:layout_weight">1</item>
         <item name="android:textColor">@color/text_dim</item>
         <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="SwitchRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingVertical">6dp</item>
+    </style>
+
+    <style name="SwitchLabel">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">15sp</item>
     </style>
 
 </resources>

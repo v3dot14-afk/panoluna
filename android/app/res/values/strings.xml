@@ -23,6 +23,24 @@
     <string name="connect_no_network">Сеть «Luna Ultra» не найдена. Включите камеру и попробуйте снова.</string>
     <string name="connect_need_location">Нужен разрешение на определение местоположения, чтобы прочитать Wi-Fi камеры.</string>
     <string name="connect_need_manual">На Android 9 и ниже подключите Wi-Fi камеры в системных настройках, затем нажмите «Подключиться».</string>
+    <string name="connect_hint">Камера создаёт сеть «Luna Ultra …». Найдите её и введите пароль.</string>
+    <string name="connect_search">Поиск Wi-Fi камеры</string>
+    <string name="connect_search_waiting">Нажмите кнопку, чтобы найти камеру</string>
+    <string name="connect_search_scanning">Сканирование…</string>
+    <string name="connect_search_found">Найдена: %1$s</string>
+    <string name="connect_search_none">Камера не найдена. Проверьте Wi-Fi и включите камеру.</string>
+    <string name="connect_search_denied">Не дано разрешение на сканирование Wi-Fi.</string>
+    <string name="connect_connect_title">Подключение</string>
+    <string name="connect_network">Сеть</string>
+    <string name="connect_password_hint">Введите пароль Wi-Fi</string>
+    <string name="connect_connect">Подключиться</string>
+    <string name="connect_state_idle2">Не выбрана</string>
+
+    <!-- Навигация по низу -->
+    <string name="nav_pano">Панорама</string>
+    <string name="nav_camera">Настройки камеры</string>
+    <string name="nav_gallery">Галерея</string>
+    <string name="nav_settings">Настройки</string>
 
     <!-- Экран 2: видоискатель -->
     <string name="main_preview_off">Предпросмотр недоступен</string>
@@ -89,6 +107,9 @@
 
     <!-- Настройки приложения -->
     <string name="settings_title">Настройки</string>
+    <string name="settings_appearance">Внешний вид</string>
+    <string name="settings_theme_dark">Тёмная тема</string>
+    <string name="settings_theme_desc">Переключение между тёмной и светлой темой</string>
     <string name="settings_camera">Камера</string>
     <string name="settings_host">IP-адрес</string>
     <string name="settings_port">Порт</string>

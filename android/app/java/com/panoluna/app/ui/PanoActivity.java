@@ -44,8 +44,9 @@ public final class PanoActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pano);
         app = PanoLunaApp.get(this);
+        app.applyTheme(this);
+        setContentView(R.layout.activity_pano);
 
         rows = findViewById(R.id.pano_rows);
         columns = findViewById(R.id.pano_columns);

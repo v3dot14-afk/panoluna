@@ -46,8 +46,9 @@ public final class CameraSettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_camera_settings);
         app = PanoLunaApp.get(this);
+        app.applyTheme(this);
+        setContentView(R.layout.activity_camera_settings);
 
         sizeStandard = findViewById(R.id.size_standard);
         sizeUltra = findViewById(R.id.size_ultra);

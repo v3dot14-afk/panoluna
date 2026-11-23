@@ -18,6 +18,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.panoluna.app.PanoLunaApp;
 import com.panoluna.app.R;
 import com.panoluna.app.media.MediaSaver;
 
@@ -48,6 +49,7 @@ public final class GalleryActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PanoLunaApp.get(this).applyTheme(this);
         setContentView(R.layout.activity_gallery);
         grid = findViewById(R.id.gallery_grid);
         empty = findViewById(R.id.gallery_empty);

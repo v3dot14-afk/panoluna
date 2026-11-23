@@ -52,6 +52,13 @@ public final class Settings {
 
     private static final String KEY_USE_MJPEG = "use_mjpeg_preview";
 
+    private static final String KEY_THEME = "theme_mode";
+
+    /** Темы. */
+    public static final int THEME_DARK = 0;
+    public static final int THEME_LIGHT = 1;
+    public static final int THEME_SYSTEM = 2;
+
     private final SharedPreferences prefs;
 
     public Settings(Context context) {
@@ -304,7 +311,24 @@ public final class Settings {
         prefs.edit().putBoolean(KEY_USE_MJPEG, value).apply();
     }
 
-    /** Cancella tutto: credenziali Wi-Fi, impostazioni, lavori. Usato da Impostazioni. */
+    // ---- Тема ----
+
+    /** 0 = тёмная, 1 = светлая, 2 = как в системе. */
+    public int themeMode() {
+        return prefs.getInt(KEY_THEME, THEME_DARK);
+    }
+
+    /** true, если должна быть тёмная тема. */
+    public boolean darkTheme() {
+        int mode = themeMode();
+        return mode == THEME_DARK || mode == THEME_SYSTEM;
+    }
+
+    public void setThemeMode(int mode) {
+        prefs.edit().putInt(KEY_THEME, mode).apply();
+    }
+
+    /** Cancella tutto: credenziaли Wi-Fi, настройки, работы. Используется из Настроек. */
     public void clearAll() {
         prefs.edit().clear().apply();
     }

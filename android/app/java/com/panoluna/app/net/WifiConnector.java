@@ -17,15 +17,15 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * L'access point della camera non offre accesso a Internet: senza un binding esplicito Android
- * continua a instradare i socket sui dati mobili e la connessione a 192.168.42.1 fallisce.
- *
- * Qui si cerca il SSID della Luna, ci si collega con il WifiNetworkSpecifier (Android 10+) e
- * si tiene la rete registrata: una Wi-Fi senza Internet viene abbandonata appena l'app passa
- * in secondo piano, se nessuno la sta usando.
+ * Подключение к точке доступа камеры: камера не предлагает интернет, поэтому без привязки
+ * Android идёт на мобилу и 192.168.42.1 недоступен. Здесь ищутся SSID Luna, запрашивается
+ * подключение через WifiNetworkSpecifier (Android 10+), и сеть удерживается:
+ * Wi-Fi без интернета оставляется, только пока приложением активно используется.
  */
 public final class WifiConnector {
 
@@ -59,6 +59,7 @@ public final class WifiConnector {
         this.wifi = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
     }
 
+    /**true, если SSID относится к камере Luna.*/
     public static boolean isLunaSsid(String raw) {
         if (raw == null) {
             return false;
@@ -71,15 +72,106 @@ public final class WifiConnector {
         return value.toLowerCase().startsWith(SSID_PREFIX.toLowerCase());
     }
 
-    /** Scansione dei risultati: tiene solo gli SSID che iniziano con "Luna Ultra". */
+    /** Нормальная очистка SSID из сканирования. */
+    public static String cleanSsid(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String value = raw.trim().replace("\"", "");
+        if (value.length() == 0 || value.equalsIgnoreCase("<unknown ssid>")
+                || value.equalsIgnoreCase("unknown ssid")) {
+            return null;
+        }
+        return value;
+    }
+
+    /** Положение Wi-Fi выключено. */
+    public boolean isWifiEnabled() {
+        if (wifi == null) {
+            return false;
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                return wifi.isWifiEnabled();
+            }
+            return wifi.isWifiEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Разрешения на сканирование Wi-Fi есть. */
+    public boolean hasScanPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return hasPermission(Manifest.permission.NEARBY_WIFI_DEVICES)
+                    || hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+    }
+
+    /**
+     * Сканирование и Return ALL видимых сетей (без фильтра по Luna), сортированных по силе
+     * сигнала. Используется для универсального поиска: даже если SSID камеры отличается,
+     * пользователь может выбрать нужную вручную.
+     */
+    public void scanAll(final ScanCallback callback) {
+        if (wifi == null) {
+            callback.onFailed("Wi-Fi недоступен");
+            return;
+        }
+        if (!isWifiEnabled()) {
+            callback.onFailed("Wi-Fi выключен. Включите его в настройках телефона.");
+            return;
+        }
+        if (!hasScanPermission()) {
+            callback.onFailed("Не дано разрешение на сканирование Wi-Fi.");
+            return;
+        }
+        try {
+            List<ScanResult> cached = allResults();
+            if (!cached.isEmpty()) {
+                callback.onResults(cached);
+            }
+            if (!wifi.startScan()) {
+                callback.onFailed("Не удалось запустить сканирование Wi-Fi.");
+                return;
+            }
+            final long deadline = System.currentTimeMillis() + 8000L;
+            pollScanAll(cached, deadline, callback);
+        } catch (SecurityException e) {
+            callback.onFailed("Не получено разрешение на сканирование Wi-Fi");
+        } catch (Exception e) {
+            callback.onFailed("Ошибка сканирования: " + e.getMessage());
+        }
+    }
+
+    private void pollScanAll(final List<ScanResult> cached, final long deadline,
+                             final ScanCallback callback) {
+        main.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                List<ScanResult> results = allResults();
+                if (!results.isEmpty() || System.currentTimeMillis() >= deadline) {
+                    callback.onResults(results);
+                    return;
+                }
+                pollScanAll(cached, deadline, callback);
+            }
+        }, 700L);
+    }
+
+    /** Сканирование, оставлено только одно лучшее сеть Luna (для авто-подключения). */
     public void scan(final ScanCallback callback) {
         if (wifi == null) {
             callback.onFailed("Wi-Fi недоступен");
             return;
         }
-        if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            callback.onFailed("Нет разрешения на определение местоположения");
+        if (!isWifiEnabled()) {
+            callback.onFailed("Wi-Fi выключен. Включите его в настройках телефона.");
+            return;
+        }
+        if (!hasScanPermission()) {
+            callback.onFailed("Не дано разрешение на сканирование Wi-Fi.");
             return;
         }
         try {
@@ -115,7 +207,8 @@ public final class WifiConnector {
         }, 700L);
     }
 
-    private List<ScanResult> bestResults() {
+    /** Все видимые сети, отсортированные по силе сигнала (сильные — первые). */
+    private List<ScanResult> allResults() {
         List<ScanResult> out = new ArrayList<ScanResult>();
         if (wifi == null) {
             return out;
@@ -125,27 +218,48 @@ public final class WifiConnector {
             if (results == null) {
                 return out;
             }
-            ScanResult best = null;
             for (ScanResult result : results) {
-                if (result == null || !isLunaSsid(result.SSID)) {
+                if (result == null || result.SSID == null) {
                     continue;
                 }
-                if (best == null || result.level > best.level) {
-                    best = result;
+                String ssid = cleanSsid(result.SSID);
+                if (ssid == null) {
+                    continue;
                 }
+                out.add(result);
             }
-            if (best != null) {
-                out.add(best);
-            }
+            Collections.sort(out, new Comparator<ScanResult>() {
+                @Override
+                public int compare(ScanResult a, ScanResult b) {
+                    return Integer.compare(b.level, a.level);
+                }
+            });
         } catch (SecurityException e) {
             Log.w(TAG, "Risultati della scansione non leggibili: " + e.getMessage());
         }
         return out;
     }
 
+    /** Лучшая из видимых сетей Luna (одна, сильнее всего). */
+    private List<ScanResult> bestResults() {
+        List<ScanResult> out = new ArrayList<ScanResult>();
+        ScanResult best = null;
+        for (ScanResult result : allResults()) {
+            if (result != null && isLunaSsid(result.SSID)) {
+                if (best == null || result.level > best.level) {
+                    best = result;
+                }
+            }
+        }
+        if (best != null) {
+            out.add(best);
+        }
+        return out;
+    }
+
     /**
-     * Si collega all'access point della Luna. Se il telefono e' gia' collegato, riusa quella
-     * rete e la rivendica.
+     * Подключается к точке доступа Luna. Если телефон уже на этой сети — переиспользует её
+     * и привязывает.
      */
     public void connect(final String ssid, final String password, final long timeoutMs,
                         final ConnectCallback onDone) {
@@ -167,7 +281,7 @@ public final class WifiConnector {
         specifier.setSsid(ssid);
         if ("WPA3".equals(security)) {
             specifier.setWpa3Passphrase(password);
-        } else if (!"OPEN".equals(security)) {
+        } else if (!security.equals("OPEN")) {
             specifier.setWpa2Passphrase(password);
         }
 
@@ -200,6 +314,24 @@ public final class WifiConnector {
         }
     }
 
+    /** Если есть активная Luna-сеть, подключается к ней без запроса. */
+    public Network getActiveLunaNetwork() {
+        return currentLunaNetwork();
+    }
+
+    /** SSID текущей активной сети. */
+    public String currentSsid() {
+        if (wifi == null) {
+            return null;
+        }
+        try {
+            WifiInfo info = wifi.getConnectionInfo();
+            return info == null ? null : cleanSsid(info.getSSID());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** Libera la richiesta di rete, ma non la rete gia' collegata. */
     public void release() {
         if (callback != null) {
@@ -216,7 +348,7 @@ public final class WifiConnector {
         return network;
     }
 
-    /** Una rete Luna gia' attiva non deve passare da nessuna finestra di scelta. */
+    /** Уже активная Luna-сеть не требует ввода. */
     private Network currentLunaNetwork() {
         try {
             for (Network candidate : connectivity.getAllNetworks()) {
@@ -245,12 +377,18 @@ public final class WifiConnector {
         return null;
     }
 
+    /** Пример безопасности точки доступа по SSID (WAPA2/WPA3/OPEN). */
     private String guessSecurity(String ssid) {
         try {
             List<ScanResult> results = wifi.getScanResults();
             if (results != null) {
+                String target = cleanSsid(ssid);
                 for (ScanResult result : results) {
-                    if (result != null && ssid != null && ssid.equals(result.SSID)) {
+                    if (result == null) {
+                        continue;
+                    }
+                    String s = cleanSsid(result.SSID);
+                    if (target != null && target.equalsIgnoreCase(s)) {
                         String caps = result.capabilities == null ? "" : result.capabilities.toUpperCase();
                         if (caps.contains("SAE")) {
                             return "WPA3";
@@ -266,14 +404,14 @@ public final class WifiConnector {
                 }
             }
         } catch (SecurityException ignored) {
-            // senza permessi si Assume WPA2
+            // без разрешений предполагаем WPA2
         }
         return "WPA2";
     }
 
     /**
-     * Tiene in vita la Wi-Fi corrente con una richiesta senza specifier: serve alla rete a cui
-     * l'utente si e' collegato dalle impostazioni di sistema.
+     * Удерживает текущую Wi-Fi запросом без specifier: это нужно для сети, к которой
+     * пользователь подключился из системных настроек.
      */
     private void pin() {
         release();

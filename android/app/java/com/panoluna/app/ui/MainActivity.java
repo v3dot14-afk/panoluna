@@ -119,8 +119,9 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         app = PanoLunaApp.get(this);
+        app.applyTheme(this);
+        setContentView(R.layout.activity_main);
         preview = new MjpegPreview();
 
         previewView = findViewById(R.id.preview);
