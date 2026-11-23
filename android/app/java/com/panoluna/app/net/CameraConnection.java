@@ -80,7 +80,7 @@ public final class CameraConnection {
             try {
                 bindNetwork.bindSocket(s);
             } catch (IOException e) {
-                Log.w(TAG, "bindSocket alla rete Wi-Fi fallito: " + e.getMessage());
+                Log.w(TAG, "Не удалось привязать socket к сети Wi-Fi: " + e.getMessage());
             }
         }
         s.connect(new InetSocketAddress(host, port), (int) connectTimeoutMs);
@@ -158,7 +158,7 @@ public final class CameraConnection {
                     payload == null ? new byte[0] : payload));
             return true;
         } catch (IOException e) {
-            Log.w(TAG, "Invio del comando " + code + " fallito: " + e.getMessage());
+            Log.w(TAG, "Не удалось отправить команду " + code + ": " + e.getMessage());
             return false;
         }
     }
@@ -242,7 +242,7 @@ public final class CameraConnection {
                 }
             } catch (IOException e) {
                 if (!userClosed) {
-                    Log.w(TAG, "Socket chiuso: " + e.getMessage());
+                    Log.w(TAG, "Socket закрыт: " + e.getMessage());
                 }
             } finally {
                 connected = false;
@@ -250,7 +250,7 @@ public final class CameraConnection {
                 if (!userClosed) {
                     Listener l = listener;
                     if (l != null) {
-                        l.onDisconnected("La camera ha chiuso la connessione");
+                        l.onDisconnected("Камера закрыла соединение");
                     }
                 }
             }

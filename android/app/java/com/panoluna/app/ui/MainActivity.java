@@ -81,7 +81,7 @@ public final class MainActivity extends Activity {
 
         @Override
         public void onError(String message) {
-            log("Errore: " + message);
+            log("Ошибка: " + message);
         }
 
         @Override

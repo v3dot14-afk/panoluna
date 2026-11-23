@@ -121,7 +121,7 @@ public final class MjpegPreview {
             postClosed(listener);
         } catch (Exception e) {
             if (running) {
-                postError(listener, "Anteprima non disponibile: " + e.getMessage());
+                postError(listener, "Предпросмотр недоступен: " + e.getMessage());
             }
         }
     }

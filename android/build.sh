@@ -157,7 +157,8 @@ log "verify"
 "$JAVA" -jar "$APKSIGNER" verify "$DIST/PanoLuna.apk"
 
 log "badging"
-"$AAPT2" dump badging "$DIST/PanoLuna.apk" | head -8
+BADGING="$("$AAPT2" dump badging "$DIST/PanoLuna.apk" 2>/dev/null)"
+printf '%s\n' "$BADGING" | sed -n '1,8p'
 
 log "Fatto: $DIST/PanoLuna.apk"
 ls -la "$DIST/PanoLuna.apk"

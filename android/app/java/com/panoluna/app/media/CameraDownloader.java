@@ -108,7 +108,7 @@ public final class CameraDownloader {
             in.close();
             return out.toByteArray();
         } catch (Exception e) {
-            Log.w(TAG, "Download " + url + " fallito: " + e.getMessage());
+            Log.w(TAG, "Не удалось скачать " + url + ": " + e.getMessage());
             return null;
         } finally {
             if (connection != null) {

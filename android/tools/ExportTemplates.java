@@ -40,31 +40,31 @@ public final class ExportTemplates {
         write(new File(jobDir, "PanoLuna_24scatti.p2vr"),
                 plan24.toPano2vrProject("PanoLuna_24scatti_equirectangular.jpg"));
         write(new File(jobDir, "PanoLuna_24scatti.csv"), plan24.toCsv());
-        write(new File(jobDir, "LEGGIMI.txt"), readme(plan24));
+        write(new File(jobDir, "README.txt"), readme(plan24));
 
         System.out.println("template scritti in " + templates + " e " + dist);
     }
 
     private static String readme(PanoPlan plan) {
         StringBuilder sb = new StringBuilder();
-        sb.append("PanoLuna - lavoro da ").append(plan.size()).append(" scatti\n");
-        sb.append("Fotocamera: Insta360 Luna Ultra, lente 1x\n");
-        sb.append("Griglia: ").append(plan.getRows()).append(" file x ")
-                .append(plan.getColumns()).append(" colonne\n");
-        sb.append("Sovrapposizione: ").append(plan.getOverlapPercent()).append("%\n");
+        sb.append("PanoLuna - работа из ").append(plan.size()).append(" снимков\n");
+        sb.append("Камера: Insta360 Luna Ultra, объектив 1x\n");
+        sb.append("Сетка: ").append(plan.getRows()).append(" строк x ")
+                .append(plan.getColumns()).append(" столбцов\n");
+        sb.append("Перекрытие: ").append(plan.getOverlapPercent()).append("%\n");
         sb.append("Tilt: ").append(plan.getTiltBottom()).append(" .. ")
-                .append(plan.getTiltTop()).append(" gradi\n\n");
-        sb.append("1) PTGui: apri il progetto ").append("PanoLuna_").append(plan.size()).append("scatti.pts\n");
-        sb.append("   e trascina le ").append(plan.size())
-                .append(" foto: gli angoli pan/pitch sono gia' impostati per indice.\n");
-        sb.append("   Uscita: equirettangolare 27654x13827 (2:1).\n\n");
-        sb.append("2) Pano2VR: due strade.\n");
-        sb.append("   a) il progetto ").append("PanoLuna_").append(plan.size()).append("scatti.p2vr, che punta all'equirettangolare\n");
-        sb.append("      cucito da PTGui (rinominato ").append("PanoLuna_").append(plan.size())
+                .append(plan.getTiltTop()).append(" градусов\n\n");
+        sb.append("1) PTGui: откройте проект ").append("PanoLuna_").append(plan.size()).append("scatti.pts\n");
+        sb.append("   и перетащите ").append(plan.size())
+                .append(" фотографии: углы pan/pitch уже заданы по индексу.\n");
+        sb.append("   Выход: equirectangular 27654x13827 (2:1).\n\n");
+        sb.append("2) Pano2VR: два пути.\n");
+        sb.append("   a) проект ").append("PanoLuna_").append(plan.size()).append("scatti.p2vr, который указывает на equirectangular\n");
+        sb.append("      сшитую в PTGui (переименуйте в ").append("PanoLuna_").append(plan.size())
                 .append("scatti_equirectangular.jpg).\n");
-        sb.append("   b) Pro > File > Importa Papywizard, con PanoLuna_").append(plan.size())
+        sb.append("   b) Pro > File > Import Papywizard, с PanoLuna_").append(plan.size())
                 .append("scatti.papywizard.xml.\n\n");
-        sb.append("3) ").append("PanoLuna_").append(plan.size()).append("scatti.csv ha gli angoli per riga.\n");
+        sb.append("3) ").append("PanoLuna_").append(plan.size()).append("scatti.csv - таблица углов по строкам.\n");
         return sb.toString();
     }
 

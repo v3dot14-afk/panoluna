@@ -1,115 +1,116 @@
 # PanoLuna
 
-App Android che fa da **Panoshooter** per la **Insta360 Luna Ultra**: spara 24 fotogrammi
-allineati sul gimbal e li scarica sul telefono, pronti per essere cuciti in PTGui e pubblicati
-con pano2vr.
+Android-приложение, которое работает как **Panoshooter** для **Insta360 Luna Ultra**: делает 24
+снимка, выстроенных по порядку на гимбале, и скачивает их на телефон — готовых к сшиву в PTGui
+и публикации через pano2vr.
 
 ```
-android/app            sorgenti, risorse e manifest
-android/build.sh       compila l'APK senza Gradle né Android SDK
-android/test.sh        verifica i pezzi di logica pura (codec, piano, export)
-templates/             i template pronti da copiare in PTGui e pano2vr
-dist/                  l'APK firmato e il lavoro di esempio a 24 scatti
+android/app            источники, ресурсы и манифест
+android/build.sh       сборка APK без Gradle и Android SDK
+android/test.sh        проверка чистой логики (кодек, план, экспорт)
+templates/             готовые шаблоны для PTGui и pano2vr
+dist/                  подписанный APK и пример работы на 24 смётки
 ```
 
-## Cosa fa
+## Что делает
 
-**Schermata 1 — connessione.** Cerca la rete Wi-Fi della camera (`Luna Ultra*`), chiede la
-password, la ricorda. In Impostazioni c'è il pulsante che **elimina rete e password ricordate**.
-L'indirizzo della camera è `192.168.42.1` (porta `6666`), modificabile.
+**Первый экран — подключение.** Находит сеть Wi-Fi камеры (`Luna Ultra*`), запрашивает
+пароль и запоминает его. В разделе настроек есть кнопка, которая **удаляет запомненную сеть и
+пароль**. Адрес камеры — `192.168.42.1` (порт `6666`), можно изменить.
 
-**Schermata 2 — il mirino.** Anteprima dal vivo dalla camera, levetta circolare per il gimbal,
-batteria e stato. Al centro i quattro comandi della panoramica — **tondi, con una sola
-pictogramma, senza scritte**: avvia, pausa, riprendi, stop. In basso la barra con le quattro
-sezioni: panoramica, fotocamera, galleria, impostazioni.
+**Второй экран — видоискатель.** Live-превью с камеры, круговой джойстик для гимбала,
+заряд батареи и статус. В центре четыре команды панорамы — **круглые кнопки с одним
+пиктографом и без текста**: старт, пауза, продолжение, стоп. Внизу — панель с четырьмя
+разделами: панорама, камера, галерея, настройки.
 
-## Compilare
+## Сборка
 
-Non serve Android Studio: non c'è un Android SDK raggiungibile, e la catena è la stessa che usa
-Gradle, messa in fila a mano.
+Android Studio не нужна: доступного Android SDK нет, поэтому используется та же цепочка,
+которую Gradle применяет, просто выстроена вручную.
 
 ```bash
-bash android/build.sh      # produce ../dist/PanoLuna.apk
-bash android/test.sh       # verifica codec UCD2, protobuf, piano, export
+bash android/build.sh      # создаёт ../dist/PanoLuna.apk
+bash android/test.sh       # проверяет UCD2-кодек, protobuf, план панорамы, экспорт
 ```
 
-Gli strumenti in `android/tools/` arrivano da npm e PyPI:
+Инструменты в `android/tools/` берутся из npm и PyPI:
 
-| strumento | fonte |
+| инструмент | источник |
 |---|---|
-| `aapt2` | npm `aaptjs3` (binario nativo Linux) |
-| `android.jar` | npm `@drxiaozhi/minapk` (stub della piattaforma) |
+| `aapt2` | npm `aaptjs3` (родной Linux-бинарь) |
+| `android.jar` | npm `@drxiaozhi/minapk` (stub платформы) |
 | `d8.jar`, `apksigner.jar`, `ecj-3.45.0.jar` | npm `@drxiaozhi/minapk` |
 | JDK 17 | pypi `jdk4py` |
 
-`build.sh` li scarica al primo avvio se mancano.
+`build.sh` скачивает их при первом запуске, если чего-то не хватает.
 
-## Protocollo
+## Протокол
 
-Controllo su `192.168.42.1:6666`, framing **UCD2**, payload **protobuf**
-(`insta360.messages`). Le scelte non ovvie:
+Управление по `192.168.42.1:6666`, фрейминг **UCD2**, пользовательские данные — **protobuf**
+(`insta360.messages`). Неочевидные моменты:
 
-- **La sessione non si apre con un comando.** Si autorizza con un frame di tipo stream a
-  lunghezza zero e token `f6 cc 4f 09`, ripetuto ogni 3 s come keep-alive.
-- **Il trailer non è un CRC-32 standard.** Polinomio `0x04C11DB7`, init `−1`, per ogni byte XOR
-  con il byte basso e quattro round di tabella sul byte alto. Non "correggerlo".
-- **Risposta ≠ comando.** La camera risponde sempre `200`: a correlare richiesta e risposta è
-  il `requestId`, non il codice né il seq.
-- **Una sola connessione di controllo.** Se l'app Insta360 ufficiale è attiva, è lei ad avere la
-  sessione: chiuderla completamente.
-- **`TAKE_PICTURE` risponde quando accetta, non quando scrive la foto.** Per questo il fluspo
-  degli scatti aspetta che lo stato torni libero prima di passare al punto successivo.
+- **Сессия не открывается команды.** Разрешение даётся фреймом потокового типа с
+  нулевой длиной и токеном `f6 cc 4f 09`, повторяемым каждые 3 секунды как keep-alive.
+- **Трейлер — не обычный CRC-32.** Полином `0x04C11DB7`, инициализация `−1`, для каждого
+  байта XOR с младшим байтом и четыре прогона таблицы по старшему. Не «чинить» его.
+- **Ответ ≠ команда.** Камера отвечает всегда `200`: связать запрос и ответ можно только по
+  `requestId`, а не по коду или порядковому номеру.
+- **Одна управляющая сессия.** Если запущено официальное приложение Insta360, именно оно
+  держит сессию: нужно полностью его закрыть.
+- **`TAKE_PICTURE` отвечает, когда принял, а не когда записал снимок.** Поэтому поток съёмок
+  дожидается возвращения состояния в исходное, прежде чем перейти к следующей точке.
 
-I riferimenti usati sono nel file `docs/PROTOCOLLO.md`.
+Изученные источники описаны в `docs/PROTOCOL.md`.
 
-## Il flusso di scatto
+## Поток съёмки
 
-Per ogni punto del piano: `driveTo` → 350 ms di assestamento → `takePicture` → attesa che lo
-stato di scatto torni libero → attesa configurabile (default 6 s). Le file partono dal basso e
-il senso si alterna, così il gimbal fa sempre un passo invece di tornare a capo.
+Для каждой точки плана: `driveTo` → 350 мс на удержание → `takePicture` → ожидание
+возвращения состояния съёмки в исходное → запланированная пауза (по умолчанию 6 с). Параметры
+идут снизу вверх, направление прохода чередуется, чтобы гимбал всегда делал шаг, а не
+возвращался на начало.
 
-Il piano predefinito è **4 file × 6 colonne = 24 scatti**, tilt −52°…+52°, sovrapposizione 30%.
+План по умолчанию — **4 строки × 6 столбцов = 24 снимка**, tilt −52°…+52°, накладление 30%.
 
-## Template di stitch
+## Шаблоны для сшива
 
-`PanoActivity` esporta il lavoro completo in una cartella:
+`PanoActivity` экспортирует полную работу в папку:
 
-| file | serve a |
+| файл | для чего |
 |---|---|
-| `*.pts` | **PTGui** — progetto con yaw/pitch già impostati per indice, lente rettilinea `f0`, campo orizzontale misurato 77,7°, uscita 2:1 |
-| `*.papywizard.xml` | **PTGui** (File → Importa Papywizard) e **pano2vr Pro** |
-| `*.p2vr` | **pano2vr** — progetto già puntato all'equirettangolare, tile 512 px multirisoluzione |
-| `*.csv` | la tabella degli angoli, per chi la vuole in Excel |
+| `*.pts` | **PTGui** — проект с заданными yaw/pitch по индексу, прямолинейная линза `f0`, измеренное горизонтальное поле 77,7°, выход 2:1 |
+| `*.papywizard.xml` | **PTGui** (File → Import Papywizard) и **pano2vr Pro** |
+| `*.p2vr` | **pano2vr** — проект, уже направленный на equirectangular, мультиразрешённые плитки 512 px |
+| `*.csv` | таблица углов для тех, кто хочет открыть её в Excel |
 
-Le quattro griglie (12, 18, 24, 36 scatti) sono già generate in `templates/`.
+Четыре сетки (12, 18, 24, 36 снимков) уже сгенерированы в `templates/`.
 
-### Installarli
+### Установка шаблонов
 
-- **PTGui**: copiare i `.pts` in
+- **PTGui**: скопировать `.pts` в
   `%APPDATA%\PTGui\Templates\` (Windows), `~/Library/Application Support/PTGui/` (macOS),
-  `$HOME/.PTGui/` (Linux). Poi *File → Applica template*.
-- **pano2vr**: il `.p2vr` si apre direttamente; il Papywizard XML si importa da
-  *File → Importa Papywizard* (versione Pro).
+  `$HOME/.PTGui/` (Linux). Затем *File → Apply Template*.
+- **pano2vr**: `.p2vr` открывается напрямую; Papywizard XML импортируется через
+  *File → Import Papywizard* (версия Pro).
 
-### Nota sulla risoluzione
+### Заметка о разрешении
 
-Il template punta a un'uscita di **27654 × 13827** (2:1), il massimo misurato con 24 scatti a
-1x. PTGui limita il JPEG a **25000 px per lato**: se *Create Panorama* rifiuta, ridurre a
-24000 × 12000 o cambiare il formato in TIFF. In alternativa *Set optimum size* ricalcola la
-dimensione esatta da questo progetto.
+Шаблон нацелен на выход **27654 × 13827** (2:1) — максимум, измеренный на 24 снимках на 1x.
+PTGui ограничивает JPEG **25000 пикселями по стороне**: если *Create Panorama* отказывается,
+уменьшить до 24000 × 12000 или перейти на TIFF. Или *Set optimum size* пересчитает точный
+размер по текущему проекту.
 
-## Numeri misurati sulla Luna Ultra
+## Измеренные значения на Luna Ultra
 
-| grandezza | valore |
+| величина | значение |
 |---|---|
-| campo orizzontale 1x (4:3) | 77,07–77,67° (catalogo 81,74°) |
-| campo verticale corrispondente | ~62,3° |
-| fuoco equivalente 35 mm | ~21,5 mm |
-| offset dello zero del tilt | +6,9° |
-| fattore angolare | ×1,235 |
-| JPEG 37 MP | ~7040 × 5288 |
-| corsa pan | −57° … +235° |
+| горизонтальное поле 1x (4:3) | 77,07–77,67° (каталог 81,74°) |
+| соответствующее вертикальное поле | ~62,3° |
+| эквивалент фокусного расстояния 35 мм | ~21,5 мм |
+| смещение нуля tilt | +6,9° |
+| угловой масштабный фактор | ×1,235 |
+| JPEG 37 Мп | ~7040 × 5288 |
+| диапазон pan | −57° … +235° |
 
-Il pan non è osservabile dalla camera (non c'è un feedback di posizione): il planner lo
-**ricostruisce** integrando la velocità nel tempo, e l'app lo corregge con il fattore misurato.
-Il tilt ha invece un offset e un fattore noti.
+Pan не наблюдается из камеры (нет обратной связи по положению): планировщик **восстанавливает**
+его, интегрируя скорость по времени, и приложение корректирует измеренным фактором. Для tilt
+смещение и фактор известны.

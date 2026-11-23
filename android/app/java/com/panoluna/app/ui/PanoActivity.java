@@ -201,7 +201,7 @@ public final class PanoActivity extends Activity {
                     public void onDone(int ok, int failed) {
                         downloadProgress.setVisibility(View.GONE);
                         Toast.makeText(PanoActivity.this,
-                                ok + " foto salvate in " + job + (failed > 0 ? " (" + failed + " fallite)" : ""),
+                                ok + " фото сохранено в " + job + (failed > 0 ? " (не удалось " + failed + ")" : ""),
                                 Toast.LENGTH_LONG).show();
                     }
 
@@ -225,7 +225,7 @@ public final class PanoActivity extends Activity {
             Toast.makeText(this, getString(R.string.pano_export_ok, file.getAbsolutePath()),
                     Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "Scrittura fallita", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Запись не удалась", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -241,7 +241,7 @@ public final class PanoActivity extends Activity {
             Toast.makeText(this, getString(R.string.pano_export_ok, file.getAbsolutePath()),
                     Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "Scrittura fallita", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Запись не удалась", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -268,38 +268,38 @@ public final class PanoActivity extends Activity {
         ok &= write(new File(dir, stem + ".p2vr"),
                 plan.toPano2vrProject(stem + "_equirectangular.jpg"));
         ok &= write(new File(dir, stem + ".csv"), plan.toCsv());
-        ok &= write(new File(dir, "LEGGIMI.txt"), readme(plan));
+        ok &= write(new File(dir, "README.txt"), readme(plan));
 
         if (ok) {
             Toast.makeText(this, getString(R.string.pano_export_job_ok, dir.getAbsolutePath()),
                     Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "Scrittura fallita", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Запись не удалась", Toast.LENGTH_SHORT).show();
         }
     }
 
     private String readme(PanoPlan plan) {
         StringBuilder sb = new StringBuilder();
-        sb.append("PanoLuna - lavoro da ").append(plan.size()).append(" scatti\n");
-        sb.append("Fotocamera: Insta360 Luna Ultra, lente 1x\n");
-        sb.append("Griglia: ").append(plan.getRows()).append(" file x ")
-                .append(plan.getColumns()).append(" colonne\n");
-        sb.append("Sovrapposizione: ").append(plan.getOverlapPercent()).append("%\n");
+        sb.append("PanoLuna - работа из ").append(plan.size()).append(" снимков\n");
+        sb.append("Камера: Insta360 Luna Ultra, объектив 1x\n");
+        sb.append("Сетка: ").append(plan.getRows()).append(" строк x ")
+                .append(plan.getColumns()).append(" столбцов\n");
+        sb.append("Перекрытие: ").append(plan.getOverlapPercent()).append("%\n");
         sb.append("Tilt: ").append(plan.getTiltBottom()).append(" .. ")
-                .append(plan.getTiltTop()).append(" gradi\n\n");
-        sb.append("1) PTGui: apri il progetto ").append("PanoLuna_").append(plan.size()).append("scatti.pts\n");
-        sb.append("   File > Apri template, oppure trascina le ").append(plan.size())
-                .append(" foto nel progetto:\n");
-        sb.append("   gli angoli pan/pitch sono gia' impostati per indice.\n");
-        sb.append("   Uscita: equirettangolare 27654x13827 (2:1).\n\n");
-        sb.append("2) Pano2VR: due strade.\n");
-        sb.append("   a) progetto ").append("PanoLuna_").append(plan.size()).append("scatti.p2vr, che punta all'equirettangolare\n");
-        sb.append("      cucito da PTGui (rinominalo come ").append("PanoLuna_").append(plan.size())
+                .append(plan.getTiltTop()).append(" градусов\n\n");
+        sb.append("1) PTGui: откройте проект ").append("PanoLuna_").append(plan.size()).append("scatti.pts\n");
+        sb.append("   File > Открыть шаблон, либо перетащите ").append(plan.size())
+                .append(" фотографии в проект:\n");
+        sb.append("   углы pan/pitch уже заданы по индексу.\n");
+        sb.append("   Выход: equirectangular 27654x13827 (2:1).\n\n");
+        sb.append("2) Pano2VR: два пути.\n");
+        sb.append("   a) проект ").append("PanoLuna_").append(plan.size()).append("scatti.p2vr, который указывает на equirectangular\n");
+        sb.append("      сшитую в PTGui (переименуйте в ").append("PanoLuna_").append(plan.size())
                 .append("scatti_equirectangular.jpg).\n");
-        sb.append("   b) Pro > File > Importa Papywizard, con PanoLuna_").append(plan.size())
+        sb.append("   b) Pro > File > Import Papywizard, с PanoLuna_").append(plan.size())
                 .append("scatti.papywizard.xml:\n");
-        sb.append("      pano2vr allinea le singole foto da solo.\n\n");
-        sb.append("3) La tabella ").append("PanoLuna_").append(plan.size()).append("scatti.csv ha gli angoli per riga.\n");
+        sb.append("      pano2vr сам выровняет отдельные фотографии.\n\n");
+        sb.append("3) Таблица ").append("PanoLuna_").append(plan.size()).append("scatti.csv - углы по строкам.\n");
         return sb.toString();
     }
 

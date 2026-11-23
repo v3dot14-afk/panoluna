@@ -121,7 +121,7 @@ public final class PanoLunaApp extends Application {
             dispatchState(true, null);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Connessione alla camera fallita: " + e.getMessage());
+            Log.e(TAG, "Не удалось подключиться к камере: " + e.getMessage());
             dispatchState(false, e.getMessage());
             return false;
         }

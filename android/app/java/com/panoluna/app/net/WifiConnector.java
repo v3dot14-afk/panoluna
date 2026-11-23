@@ -74,12 +74,12 @@ public final class WifiConnector {
     /** Scansione dei risultati: tiene solo gli SSID che iniziano con "Luna Ultra". */
     public void scan(final ScanCallback callback) {
         if (wifi == null) {
-            callback.onFailed("Wi-Fi non disponibile");
+            callback.onFailed("Wi-Fi недоступен");
             return;
         }
         if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            callback.onFailed("Permesso di localizzazione mancante");
+            callback.onFailed("Нет разрешения на определение местоположения");
             return;
         }
         try {
@@ -96,7 +96,7 @@ public final class WifiConnector {
             final long deadline = System.currentTimeMillis() + 8000L;
             pollScan(cached, deadline, callback);
         } catch (SecurityException e) {
-            callback.onFailed("Scansione Wi-Fi non autorizzata");
+            callback.onFailed("Не получено разрешение на сканирование Wi-Fi");
         }
     }
 
@@ -188,7 +188,7 @@ public final class WifiConnector {
             @Override
             public void onUnavailable() {
                 release();
-                onDone.onFailed("L'access point non risponde. Controlla la password.");
+                onDone.onFailed("Точка доступа не отвечает. Проверьте пароль.");
             }
         };
         callback = networkCallback;
@@ -196,7 +196,7 @@ public final class WifiConnector {
             connectivity.requestNetwork(request, networkCallback,
                     (int) Math.max(5000L, timeoutMs));
         } catch (Exception e) {
-            onDone.onFailed("Richiesta di rete fallita: " + e.getMessage());
+            onDone.onFailed("Не удалось запросить сеть: " + e.getMessage());
         }
     }
 
@@ -229,7 +229,7 @@ public final class WifiConnector {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Stato della rete Wi-Fi non leggibile: " + e.getMessage());
+            Log.w(TAG, "Не удалось прочитать состояние сети Wi-Fi: " + e.getMessage());
         }
         return null;
     }
