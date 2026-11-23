@@ -85,22 +85,6 @@ public final class Messages {
     }
 
     /**
-     * Imposta la proporzione della panoramica in-camera: PANO_ASPECT (98) su
-     * function_mode NORMAL_POWER_PANO_IMAGE. 1 = 360-sfere, 4 = 2:1.
-     *
-     * Без этого множества официальная приложение не запускает встроенный панорамный
-     * цикл камеры (19 кадров + встроенный stitching): камера остаётся в INSTA_PANO, но
-     * не знает, какой panorama делать. Контролирует официальный Insta360-приложение.
-     */
-    public static byte[] setPanoAspect(int aspect, int functionMode) {
-        return setPhotographyOption(
-                ProtoCodes.PhotographyOptionType.PANO_ASPECT,
-                ProtoCodes.PhotographyOptionsField.PANO_ASPECT,
-                aspect,
-                functionMode);
-    }
-
-    /**
      * SetPhotographyOptions { repeated PhotographyOptionType option_types = 1;
      * PhotographyOptions value = 2; FunctionMode function_mode = 3 }.
      *

@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.panoluna.app.PanoLunaApp;
 import com.panoluna.app.R;
+import com.panoluna.app.camera.PanoPlan;
 import com.panoluna.app.camera.PanoShooter;
 import com.panoluna.app.preview.MjpegPreview;
 import com.panoluna.app.proto.Ucd2;
@@ -97,18 +98,7 @@ public final class PanoramaActivity extends Activity {
 
         @Override
         public void onShot(int index, String uri, float pan, float tilt) {
-            if (uri != null && uri.length() > 0) {
-                log("360-панорама сохранена: " + uri);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(PanoramaActivity.this,
-                                "360-панорама сохранена", Toast.LENGTH_LONG).show();
-                    }
-                });
-            } else {
-                log("Снимок " + (index + 1) + " ok");
-            }
+            log("Снимок " + (index + 1) + " ok");
         }
 
         @Override
@@ -216,7 +206,7 @@ public final class PanoramaActivity extends Activity {
             @Override
             public void onClick(View v) {
                 try {
-                    app.shooter().start();
+                    app.shooter().start(PanoPlan.shot24());
                 } catch (Throwable t) {
                     Toast.makeText(PanoramaActivity.this, "Старт не удалось: " + t.getMessage(),
                             Toast.LENGTH_SHORT).show();
@@ -431,10 +421,10 @@ public final class PanoramaActivity extends Activity {
             counter.setText("");
             progress.setProgress(0);
         }
-        if (running) {
-            progress.setMax(1);
-            progress.setProgress(app.shooter().getCursor());
-            counter.setText(getString(R.string.main_shots, app.shooter().getCursor(), 1));
+        if (running && app.shooter().getPlan() != null) {
+            progress.setMax(app.shooter().getPlan().size());
+            counter.setText(getString(R.string.main_shots, app.shooter().getCursor(),
+                    app.shooter().getPlan().size()));
         }
     }
 

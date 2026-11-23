@@ -1,37 +1,41 @@
 package com.panoluna.app.camera;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
 import com.panoluna.app.data.Settings;
+import com.panoluna.app.proto.ProtoCodes;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.concurrent.CountDownLatch;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Съёмка 360-панорамы встроенным режимом камеры.
+ * Съёмка панорамы из 24 кадров для сшивки на компьютере.
  *
- * В отличие от ранних версий (24 отдельных кадра по serpentine + внешние шаблоны),
- * официальная приложение Insta360 делает так:
+ * По третьему пункту задания: панорама — это **24 отдельных полных кадра**, которые
+ * позже сшиваются на компьютере (PTGui/papywizard/pano2vr). Приложение не делает
+ * встроенную сшивку: это был режим камеры, который мы отвернули.
  *
- *   1. enterPanoMode: photo_sub_mode = PHOTO_INSTA_PANO — камера переходит в панорамный режим;
- *   2. setPanoAspect: PANO_ASPECT = SPHERE_360 под function_mode NORMAL_POWER_PANO_IMAGE —
- *      камера знает, что нужна 360-сфера;
- *   3. ОДИН TAKE_PICTURE (isInstaPanoEnabled=true) — и камера **сама** ведёт гимбал по
- *      19 позициям, снимает и **stitching выполняет внутри себя**, сохраняя один готовый
- *      360-JPG. Оригиналы 19 кадров не сохраняются — камера их не выдаёт.
+ * Как управляет官方ное приложение Insta360 (изучено, подтверждено референсом
+ * apatassini/Insta360luna):
  *
- * Приложение не двигает гимбал при этом режиме: гимбал ведёт камера. Задача приложения —
- * выполнить три команды, дождаться результата, скачать готовый снимок и сохранить его.
+ * - **Режим фото**: для отдельных кадров ставится photo_sub_mode = PHOTO_SINGLE (0)
+ *   (обычный одиночный кадр). Встроенный панорамный режим INSTA_PANO (8) — это для
+ *   19-кадровой встроенной сшивки камеры, он нам не нужен.
+ * - **Параметры фото**: SET_PHOTOGRAPHY_OPTIONS (разрешение, выдержка, баланс белого…)
+ *   настраиваются до съёмки (applyPhotoSettings).
+ * - **Поворот гимбала**: GIMBAL_CONTROL — непрерывный вектор скорости (driveTo), гимбал
+ *   движется к каждой точке плана, и когда он на месте — обычный TAKE_PICTURE.
  *
- * Пауза/стоп кооперативны: они не перебивают камеру посреди её цикла, а отмечают
- * отмену, и сборка завершается в безопасный момент (после шага, перед следующим).
+ * Порядок важен: TAKE_PICTURE отвечает, когда камера **приняла** кадр, а не когда записала
+ * файл. Сделать следующий фото раньше записи предыдущего — значит потерять кадр, поэтому
+ * после каждого тикается ожидание завершения захвата (awaitCaptureIdle) перед следующей
+ * точкой. Снимки сохраняются **на камеру**.
+ *
+ * Пауза/стоп кооперативны: они не перебивают команду посредине, а завершают захват в
+ * безопасный момент (между кадрами, при неподвижном гимбале).
  */
 public final class PanoShooter {
 
@@ -51,7 +55,6 @@ public final class PanoShooter {
         void onLog(String message);
     }
 
-    private final Context context;
     private final Settings settings;
     private final CameraClient camera;
     private final Gimbal gimbal;
@@ -63,10 +66,11 @@ public final class PanoShooter {
 
     private volatile State state = State.IDLE;
     private volatile Listener listener;
+    private volatile PanoPlan plan;
+    private volatile int cursor;
     private volatile String lastError;
 
-    public PanoShooter(Context context, Settings settings, CameraClient camera, Gimbal gimbal) {
-        this.context = context;
+    public PanoShooter(Settings settings, CameraClient camera, Gimbal gimbal) {
         this.settings = settings;
         this.camera = camera;
         this.gimbal = gimbal;
@@ -80,8 +84,12 @@ public final class PanoShooter {
         return state;
     }
 
+    public PanoPlan getPlan() {
+        return plan;
+    }
+
     public int getCursor() {
-        return state == State.DONE ? 1 : 0;
+        return cursor;
     }
 
     public String getLastError() {
@@ -93,35 +101,37 @@ public final class PanoShooter {
         return s == State.RUNNING || s == State.PAUSED;
     }
 
-    /** Запустить встроенную 360-панораму камеры. */
-    public void start() {
+    public void start(final PanoPlan plan) {
         if (isBusy()) {
             return;
         }
+        this.plan = plan;
+        this.cursor = 0;
         this.lastError = null;
         pauseRequested.set(false);
         stopRequested.set(false);
+        gimbal.resetPosition(0f, 0f);
         setState(State.RUNNING);
-        publishProgress(0, 1);
-        log("Запуск 360-панорамы (режим камеры)");
+        log("Панорамма из " + plan.size() + " кадров");
         worker.execute(new Runnable() {
             @Override
             public void run() {
-                runPano();
+                runPlan();
             }
         });
     }
 
-    /** Пауза: завершить текущий шаг и удовлетворить отмену на следующем. */
+    /** Пауза: гимбал останавливается сразу, съёмка возобновляется после кадра. */
     public void pause() {
         if (state == State.RUNNING) {
             pauseRequested.set(true);
+            gimbal.stop(camera);
             setState(State.PAUSED);
             log("Пауза");
         }
     }
 
-    /** Возобновление после паузы. */
+    /** Продолжение с того места, где остановились. */
     public void resume() {
         if (state != State.PAUSED) {
             return;
@@ -132,196 +142,198 @@ public final class PanoShooter {
         worker.execute(new Runnable() {
             @Override
             public void run() {
-                runPano();
+                runPlan();
             }
         });
     }
 
-    /** Стоп: отмечает отмену; камера доделает текущий шаг, снимок не скачивается. */
+    /** Стоп: останавливает гимбал и оставляет уже сделанные кадры на камере. */
     public void stop() {
         stopRequested.set(true);
         pauseRequested.set(false);
+        gimbal.stop(camera);
         if (state == State.RUNNING || state == State.PAUSED) {
             setState(State.STOPPED);
             log("Стоп");
         }
     }
 
-    private void runPano() {
+    private void runPlan() {
+        List<PanoPlan.Shot> shots = plan.shots();
+        // Режим фото: обычный одиночный кадр. Встроенный INSTA_PANO нужен только для
+        // 19-кадровой встроенной сшивки камеры — для 24 кадров на компьютер он не нужен.
+        if (!enterSingleMode()) {
+            log("Не удалось подтвердить режим фото: съёмка продолжается");
+        } else {
+            log("Режим фото активирован");
+        }
+        while (cursor < shots.size()) {
+            if (stopRequested.get()) {
+                setState(State.STOPPED);
+                return;
+            }
+            if (pauseRequested.get()) {
+                setState(State.PAUSED);
+                return;
+            }
+            final PanoPlan.Shot shot = shots.get(cursor);
+            moveTo(shot);
+            if (stopRequested.get()) {
+                setState(State.STOPPED);
+                return;
+            }
+            if (pauseRequested.get()) {
+                setState(State.PAUSED);
+                return;
+            }
+            shoot(shot);
+            cursor++;
+            publishProgress(cursor, shots.size());
+        }
         if (stopRequested.get()) {
             setState(State.STOPPED);
-            return;
-        }
-        // 1. Перевести камеру в панорамный режим.
-        if (!enterPanoMode()) {
-            log("Не удалось подтвердить панорамный режим: продолжаем");
-        }
-        if (stopped()) {
-            return;
-        }
-        // 2. Задать 360-сферу.
-        if (!setPanoAspect()) {
-            log("Не удалось задать 360-аспект: продолжаем");
-        }
-        if (stopped()) {
-            return;
-        }
-        // 3. Один TAKE_PICTURE — камера делает всю панораму внутри.
-        log("Снимок 360-панорамы отправлен");
-        String uri = doStep(new Step<String>() {
-            @Override
-            public void run(CameraClient.Callback<String> cb) {
-                camera.takePicturePano(cb);
-            }
-        }, settings.getRequestTimeoutMs() + 20_000L);
-        if (stopped()) {
-            return;
-        }
-        if (uri == null || uri.length() == 0) {
-            lastError = "Камера не вернула файл панорамы";
-            setState(State.ERROR);
-            publishError(lastError);
-            return;
-        }
-        log("Камера приняла панораму: " + uri);
-        // 4. Дождаться, пока камера допишет сшитый файл (ответ — когда приняла, не когда записала).
-        publishProgress(0, 1);
-        awaitCaptureIdle();
-        if (stopped()) {
-            return;
-        }
-        // 5. Скачать готовый 360-JPG.
-        byte[] data = doStep(new Step<byte[]>() {
-            @Override
-            public void run(CameraClient.Callback<byte[]> cb) {
-                camera.downloadFile(uri, cb);
-            }
-        }, 40_000L);
-        if (stopped()) {
-            return;
-        }
-        if (data == null || data.length == 0) {
-            lastError = "Не удалось скачать панораму с камеры";
-            setState(State.ERROR);
-            publishError(lastError);
-            return;
-        }
-        // 6. Сохранить на устройство.
-        String saved = savePano(data);
-        if (saved == null) {
-            lastError = "Не удалось сохранить панораму на устройстве";
-            setState(State.ERROR);
-            publishError(lastError);
-            return;
-        }
-        publishProgress(1, 1);
-        publishShot(0, saved, 0f, 0f);
-        setState(State.DONE);
-        log("360-панорама готова: " + saved);
-    }
-
-    private boolean stopped() {
-        if (stopRequested.get()) {
-            setState(State.STOPPED);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean enterPanoMode() {
-        Boolean ok = doStep(new Step<Boolean>() {
-            @Override
-            public void run(CameraClient.Callback<Boolean> cb) {
-                camera.enterPanoMode(cb);
-            }
-        }, 10_000L);
-        if (Boolean.TRUE.equals(ok)) {
-            log("Панорамный режим активирован");
-        }
-        return Boolean.TRUE.equals(ok);
-    }
-
-    private boolean setPanoAspect() {
-        Boolean ok = doStep(new Step<Boolean>() {
-            @Override
-            public void run(CameraClient.Callback<Boolean> cb) {
-                camera.setPanoAspect(cb);
-            }
-        }, 10_000L);
-        if (Boolean.TRUE.equals(ok)) {
-            log("360-аспект установлен");
-        }
-        return Boolean.TRUE.equals(ok);
-    }
-
-    private void awaitCaptureIdle() {
-        Boolean idle = doStep(new Step<Boolean>() {
-            @Override
-            public void run(CameraClient.Callback<Boolean> cb) {
-                camera.awaitCaptureIdle(15_000L, cb);
-            }
-        }, 18_000L);
-        if (!Boolean.TRUE.equals(idle)) {
-            log("Камера ещё занята: жду перед скачиванием");
+        } else if (pauseRequested.get()) {
+            setState(State.PAUSED);
+        } else {
+            setState(State.DONE);
+            log("Панорамма завершена: " + shots.size() + " кадров на камере");
         }
     }
 
-    /** Сохранить скачанный 360-JPG в каталог приложения на устройстве. */
-    private String savePano(byte[] data) {
-        try {
-            File dir = context.getExternalFilesDir("pano360");
-            if (dir == null) {
-                dir = context.getFilesDir();
+    private void moveTo(final PanoPlan.Shot shot) {
+        log("Точка " + shot.label() + "  pan " + Math.round(shot.pan) + "  tilt "
+                + Math.round(shot.tilt));
+        final Object lock = new Object();
+        final boolean[] reached = new boolean[1];
+        // Поворот гимбала по схеме: GIMBAL_CONTROL, вектор скорости к точке плана.
+        gimbal.driveTo(shot.pan, shot.tilt, 30_000L, camera, new Gimbal.Callback() {
+            @Override
+            public void onDone(boolean value) {
+                reached[0] = value;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
             }
-            if (!dir.exists() && !dir.mkdirs()) {
-                return null;
-            }
-            String name = "PanoLuna_360_" + System.currentTimeMillis() + ".jpg";
-            File out = new File(dir, name);
-            FileOutputStream fos = new FileOutputStream(out);
+        });
+        synchronized (lock) {
             try {
-                fos.write(data);
-            } finally {
-                fos.close();
+                lock.wait(35_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-            return out.getAbsolutePath();
-        } catch (Exception e) {
-            log("Ошибка сохранения: " + e.getMessage());
-            return null;
         }
+        if (!reached[0]) {
+            log("Гимбал не достиг точки: фото делается всё равно");
+        }
+        // Гимбал должен быть неподвижен в момент съёмки: даём короткий интервал успокоения.
+        sleep(350L);
     }
 
-    /** Запустить один шаг камеры и подождать результата на рабочем потоке. */
-    private interface Step<T> {
-        void run(CameraClient.Callback<T> cb);
-    }
-
-    private <T> T doStep(Step<T> step, long timeoutMs) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        final Object[] result = new Object[1];
-        final boolean[] failed = new boolean[1];
-        step.run(new CameraClient.Callback<T>() {
+    private void shoot(final PanoPlan.Shot shot) {
+        final Object lock = new Object();
+        final String[] uri = new String[1];
+        final String[] error = new String[1];
+        // Обычный одиночный кадр: без isInstaPanoEnabled. Файл сохраняется на камеру.
+        camera.takePicture(new CameraClient.Callback<String>() {
             @Override
-            public void onResult(T value) {
-                result[0] = value;
-                latch.countDown();
+            public void onResult(String value) {
+                uri[0] = value;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
             }
 
             @Override
             public void onError(String message) {
-                failed[0] = true;
-                latch.countDown();
+                error[0] = message;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
             }
         });
-        try {
-            latch.await(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        synchronized (lock) {
+            try {
+                lock.wait(20_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
-        if (failed[0]) {
-            return null;
+        if (error[0] != null) {
+            lastError = error[0];
+            setState(State.ERROR);
+            publishError("Снимок " + (cursor + 1) + " отклонён: " + error[0]);
+            return;
         }
-        return (T) result[0];
+        if (uri[0] != null) {
+            shot.uri = uri[0];
+        }
+        publishShot(cursor, shot.uri, shot.pan, shot.tilt);
+        // Дождаться завершения записи перед движением гимбала к следующей точке.
+        final Object idleLock = new Object();
+        final boolean[] idle = new boolean[1];
+        camera.awaitCaptureIdle(settings.getPanoShotDelayMs() + 4000L,
+                new CameraClient.Callback<Boolean>() {
+                    @Override
+                    public void onResult(Boolean value) {
+                        idle[0] = value;
+                        synchronized (idleLock) {
+                            idleLock.notifyAll();
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        idle[0] = false;
+                        synchronized (idleLock) {
+                            idleLock.notifyAll();
+                        }
+                    }
+                });
+        synchronized (idleLock) {
+            try {
+                idleLock.wait(settings.getPanoShotDelayMs() + 5000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (!idle[0]) {
+            log("Камера ещё занята: жду перед следующей точкой");
+        }
+        sleep(settings.getPanoShotDelayMs());
+    }
+
+    /** Установить режим фото (photo_sub_mode = SINGLE) и дождатьсяConfirmation, с таймаутом. */
+    private boolean enterSingleMode() {
+        final Object lock = new Object();
+        final boolean[] ok = new boolean[1];
+        camera.setPhotoSubMode(ProtoCodes.PhotoSubMode.SINGLE, new CameraClient.Callback<Boolean>() {
+            @Override
+            public void onResult(Boolean value) {
+                ok[0] = Boolean.TRUE.equals(value);
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                ok[0] = false;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+        });
+        synchronized (lock) {
+            try {
+                lock.wait(10_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (ok[0]) {
+            log("Режим фото активирован");
+        }
+        return ok[0];
     }
 
     private void sleep(long ms) {

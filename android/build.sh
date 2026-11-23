@@ -150,6 +150,7 @@ mkdir -p "$DIST"
     --ks-pass pass:android \
     --ks-key-alias androiddebugkey \
     --key-pass pass:android \
+    --v1-signing-enabled false \
     --out "$DIST/PanoLuna.apk" \
     "$OUT/app-unaligned.apk"
 

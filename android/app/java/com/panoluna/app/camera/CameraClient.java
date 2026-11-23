@@ -10,10 +10,6 @@ import com.panoluna.app.proto.Proto;
 import com.panoluna.app.proto.ProtoCodes;
 import com.panoluna.app.proto.Ucd2;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -288,36 +284,15 @@ public final class CameraClient {
     }
 
     /**
-     * Spostare la camera in modalità panoramica (photo_sub_mode = PHOTO_INSTA_PANO)
-     * prima di scattare la sequenza. Senza di questo lo TAKE_PICTURE non produce
-     * lo scatto panoramimico.
-     */
-    public void enterPanoMode(final Callback<Boolean> callback) {
-        run(ProtoCodes.SET_OPTIONS,
-                Messages.setPhotoSubMode(ProtoCodes.PhotoSubMode.INSTA_PANO),
-                settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {
-                    @Override
-                    public Boolean read(Ucd2.Frame frame) {
-                        return Boolean.TRUE;
-                    }
-                }, callback);
-    }
-
-    /**
-     * Impostare la proporzione della panoramica in-camera: 360-sfera.
+     * Установить режим фото: photo_sub_mode.
      *
-     * Dopo enterPanoMode (photo_sub_mode = INSTA_PANO) la camera già знает, что
-     * делать панораму, но не знает, какую — 360-сферу или 2:1. official-приложение
-     * отправляет PANO_ASPECT = SPHERE_360 (1) под function_mode NORMAL_POWER_PANO_IMAGE,
-     * и именно после этого единственный TAKE_PICTURE запускает встроенный панорамный
-     * цикл камеры: 19 кадров, встроенный stitching, один готовый 360-JPG. Без этой
-     * команды камера остаётся в INSTA_PANO без активной панорамы.
+     * SINGLE (0) — обычный одиночный кадр (для 24-кадровой панорамы на компьютер).
+     * INSTA_PANO (8) — встроенный панорамный режим камеры (19 кадров + встроенная
+     * сшивка), который не используется для внешней сшивки.
      */
-    public void setPanoAspect(final Callback<Boolean> callback) {
-        run(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                Messages.setPanoAspect(
-                        ProtoCodes.PanoAspect.SPHERE_360,
-                        ProtoCodes.FunctionMode.NORMAL_POWER_PANO_IMAGE),
+    public void setPhotoSubMode(final int subMode, final Callback<Boolean> callback) {
+        run(ProtoCodes.SET_OPTIONS,
+                Messages.setPhotoSubMode(subMode),
                 settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {
                     @Override
                     public Boolean read(Ucd2.Frame frame) {
@@ -492,61 +467,6 @@ public final class CameraClient {
                         return page;
                     }
                 }, callback);
-    }
-
-    /**
-     * Скачать файл с камеры по HTTP: http://&lt;host&gt;&lt;uri&gt;.
-     *
-     * Результат встроенной панорамы — один готовый 360-JPG, который камера записывает
-     * сама. Чтобы выдать пользователю готовый снимок, его нужно скачать с камеры:
-     * официальная приложение делает то же (она не оставляет 19 оригиналов).
-     * Возвращает содержимое файла.
-     */
-    public void downloadFile(final String uri, final Callback<byte[]> callback) {
-        io.execute(new Runnable() {
-            @Override
-            public void run() {
-                HttpURLConnection conn = null;
-                try {
-                    String host = settings.getHost();
-                    URL url = new URL("http://" + host + uri);
-                    conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(10_000);
-                    conn.setReadTimeout(30_000);
-                    conn.setRequestProperty("Accept", "*/*");
-                    final int code = conn.getResponseCode();
-                    if (code != HttpURLConnection.HTTP_OK) {
-                        throw new java.io.IOException("HTTP " + code + " при скачивании " + uri);
-                    }
-                    InputStream in = conn.getInputStream();
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, read);
-                    }
-                    in.close();
-                    final byte[] data = out.toByteArray();
-                    main.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onResult(data);
-                        }
-                    });
-                } catch (final Exception e) {
-                    main.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onError(describeError(e));
-                        }
-                    });
-                } finally {
-                    if (conn != null) {
-                        conn.disconnect();
-                    }
-                }
-            }
-        });
     }
 
     public void deleteFiles(final String[] uris, final Callback<Boolean> callback) {
