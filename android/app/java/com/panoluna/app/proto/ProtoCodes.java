@@ -23,6 +23,8 @@ public final class ProtoCodes {
     public static final int DELETE_FILES = 12;
     public static final int GET_FILE_LIST = 13;
     public static final int GET_MINI_THUMBNAIL = 30;
+    /** SET_ACCESS_CAMERA_FILE_STATE: annuncia allo stato access_state. */
+    public static final int SET_ACCESS_CAMERA_FILE_STATE = 118;
     public static final int SET_OPTIONS = 7;
     public static final int GET_OPTIONS = 8;
     public static final int SET_PHOTOGRAPHY_OPTIONS = 9;
@@ -261,4 +263,25 @@ public final class ProtoCodes {
     /** Campi di GetOptions/SetOptions. */
     public static final int FIELD_OPTION_TYPES = 1;
     public static final int FIELD_OPTIONS_VALUE = 2;
+
+    /** SetAccessCameraFileState.access_state: 5 = l'app mostra il live view. */
+    public static final class AccessState {
+        public static final int LIVE_VIEW = 5;
+    }
+
+    /** Numeri di campo di StartLiveStream (insta360.messages.StartLiveStream). */
+    public static final class StartLiveStreamField {
+        public static final int ENABLE_VIDEO = 2;
+        public static final int VIDEO_BITRATE = 6;
+        public static final int RESOLUTION = 7;
+        public static final int ENABLE_GYRO = 8;
+        public static final int VIDEO_BITRATE_1 = 9;
+        public static final int RESOLUTION_1 = 10;
+    }
+
+    /** VideoResolution: 9 = 1440x720p30, 18 = 480x240p30 (il corpo noto-buono). */
+    public static final class VideoResolution {
+        public static final int RES_1440_720P30 = 9;
+        public static final int RES_480_240P30 = 18;
+    }
 }

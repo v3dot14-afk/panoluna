@@ -255,7 +255,19 @@ public final class PanoramaActivity extends Activity {
         app.addConnectionListener(connectionListener);
         timer.post(joystickTick);
         if (app.isCameraConnected()) {
-            startPreview();
+            // Il gimbal risponde solo mentre la camera trasmette il preview:
+            // avvia la live view prima di mostrare l'anteprima.
+            app.camera().enterLiveView(new com.panoluna.app.camera.CameraClient.Callback<Boolean>() {
+                @Override
+                public void onResult(Boolean value) {
+                    startPreview();
+                }
+
+                @Override
+                public void onError(String message) {
+                    startPreview();
+                }
+            });
         }
     }
 

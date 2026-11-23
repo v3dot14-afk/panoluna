@@ -222,6 +222,85 @@ public final class CameraClient {
     }
 
     /**
+     * Scattare una panoramica: la camera deve essere già in modalità pano e il
+     * corpo deve portare isInstaPanoEnabled=true.
+     */
+    public void takePicturePano(final Callback<String> callback) {
+        run(ProtoCodes.TAKE_PICTURE,
+                Messages.takePicturePano(),
+                settings.getRequestTimeoutMs() + 9000L, new ValueReader<String>() {
+                    @Override
+                    public String read(Ucd2.Frame frame) {
+                        return Messages.photoUri(frame.payload);
+                    }
+                }, callback);
+    }
+
+    /**
+     * Mettere la camera in live view (annuncio access-state + START_LIVE_STREAM).
+     *
+     * Il gimbal risponde alla camera solo mentre trasmette il preview: senza
+     * questa sequenza i comandi del gimbal vengono ignorati. L'annuncio
+     * (SET_ACCESS_CAMERA_FILE_STATE) distende la camera che, da un firmware
+     * recente, si "chiude" quando un'app si collega. START_LIVE_STREAM avvia la
+     * trasmissione del video sul sottore TCP (i frame MEDIA vengono già
+     * scartati dal lettore della connessione).
+     */
+    public void enterLiveView(final Callback<Boolean> callback) {
+        io.execute(new Runnable() {
+            @Override
+            public void run() {
+                boolean ok = false;
+                try {
+                    // Best effort: un firmware che non conosce il comando va avanti.
+                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(ProtoCodes.AccessState.LIVE_VIEW),
+                            2000L).get();
+                } catch (Exception ignored) {
+                    // non bloccare: START_LIVE_STREAM è quello che conta
+                }
+                try {
+                    connection.request(ProtoCodes.START_LIVE_STREAM,
+                            Messages.startLiveStream(),
+                            settings.getRequestTimeoutMs()).get();
+                    ok = true;
+                } catch (final Exception e) {
+                    main.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onError(describeError(e));
+                        }
+                    });
+                    return;
+                }
+                final boolean result = ok;
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onResult(result);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Spostare la camera in modalità panoramica (photo_sub_mode = PHOTO_INSTA_PANO)
+     * prima di scattare la sequenza. Senza di questo lo TAKE_PICTURE non produce
+     * lo scatto panoramimico.
+     */
+    public void enterPanoMode(final Callback<Boolean> callback) {
+        run(ProtoCodes.SET_OPTIONS,
+                Messages.setPhotoSubMode(ProtoCodes.PhotoSubMode.INSTA_PANO),
+                settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {
+                    @Override
+                    public Boolean read(Ucd2.Frame frame) {
+                        return Boolean.TRUE;
+                    }
+                }, callback);
+    }
+
+    /**
      * Aspetta che la camera abbia finito di salvare, prima di muovere il gimbal.
      *
      * Il comando di scatto risponde appena la camera lo accetta, non quando il file e' sulla

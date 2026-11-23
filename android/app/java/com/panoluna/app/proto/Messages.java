@@ -35,8 +35,53 @@ public final class Messages {
     /** TakePicture { Mode mode = 1; bool isInstaPanoEnabled = 5 } */
     public static byte[] takePicture(int mode) {
         Proto.Writer w = new Proto.Writer();
-        w.int32(1, mode);
+        if (mode != 0) {
+            w.int32(1, mode);
+        }
         return w.toByteArray();
+    }
+
+    /**
+     * TakePicture per una panoramica: mode NORMAL (0, omesso) e
+     * isInstaPanoEnabled=true sul campo 5. La camera deve essere già in modalità
+     * pano (photo_sub_mode = PHOTO_INSTA_PANO) per attivare lo scatto a panoramica.
+     */
+    public static byte[] takePicturePano() {
+        Proto.Writer w = new Proto.Writer();
+        w.bool(5, true);
+        return w.toByteArray();
+    }
+
+    /** SetAccessCameraFileState { AccessState access_state = 1 }: 5 = live view. */
+    public static byte[] setAccessCameraFileState(int accessState) {
+        Proto.Writer w = new Proto.Writer();
+        w.int32(1, accessState);
+        return w.toByteArray();
+    }
+
+    /**
+     * StartLiveStream { bool enable_video = 2; uint32 video_bitrate = 6;
+     * VideoResolution resolution = 7; bool enable_gyro = 8;
+     * uint32 video_bitrate1 = 9; VideoResolution resolution1 = 10 }.
+     *
+     * Corpo identico a quello della referenz-app: attiva la trasmissione del
+     * preview, che è condizione per far rispondere il gimbal.
+     */
+    public static byte[] startLiveStream() {
+        Proto.Writer w = new Proto.Writer();
+        w.int32(ProtoCodes.StartLiveStreamField.ENABLE_VIDEO, 1);
+        w.int32(ProtoCodes.StartLiveStreamField.VIDEO_BITRATE, 40);
+        w.int32(ProtoCodes.StartLiveStreamField.RESOLUTION, ProtoCodes.VideoResolution.RES_1440_720P30);
+        w.int32(ProtoCodes.StartLiveStreamField.ENABLE_GYRO, 1);
+        w.int32(ProtoCodes.StartLiveStreamField.VIDEO_BITRATE_1, 40);
+        w.int32(ProtoCodes.StartLiveStreamField.RESOLUTION_1, ProtoCodes.VideoResolution.RES_480_240P30);
+        return w.toByteArray();
+    }
+
+    /** Imposta photo_sub_mode (PHOTO_SINGLE o PHOTO_INSTA_PANO) via SET_OPTIONS. */
+    public static byte[] setPhotoSubMode(int subMode) {
+        return setOption(ProtoCodes.OptionType.PHOTO_SUB_MODE,
+                ProtoCodes.OptionsField.PHOTO_SUB_MODE, subMode);
     }
 
     /**

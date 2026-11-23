@@ -144,6 +144,15 @@ public final class PanoShooter {
 
     private void runPlan() {
         List<PanoPlan.Shot> shots = plan.shots();
+        // La camera deve essere in modalità pano prima di scattare: senza
+        // photo_sub_mode = PHOTO_INSTA_PANO lo TAKE_PICTURE non produce lo
+        // scatto panoramico. Si attende la conferma prima di partire.
+        if (!enterPanoMode()) {
+            lastError = "Impossibile mettere la camera in modalità pano";
+            setState(State.ERROR);
+            publishError(lastError);
+            return;
+        }
         while (cursor < shots.size()) {
             if (stopRequested.get()) {
                 setState(State.STOPPED);
@@ -209,7 +218,7 @@ public final class PanoShooter {
         final Object lock = new Object();
         final String[] uri = new String[1];
         final String[] error = new String[1];
-        camera.takePicture(new CameraClient.Callback<String>() {
+        camera.takePicturePano(new CameraClient.Callback<String>() {
             @Override
             public void onResult(String value) {
                 uri[0] = value;
@@ -275,6 +284,40 @@ public final class PanoShooter {
             log("La camera e' ancora occupata: attendo prima del punto successivo");
         }
         sleep(settings.getPanoShotDelayMs());
+    }
+
+    /** Chiama enterPanoMode e attende la conferma, con timeout. */
+    private boolean enterPanoMode() {
+        final Object lock = new Object();
+        final boolean[] ok = new boolean[1];
+        camera.enterPanoMode(new CameraClient.Callback<Boolean>() {
+            @Override
+            public void onResult(Boolean value) {
+                ok[0] = Boolean.TRUE.equals(value);
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                ok[0] = false;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+        });
+        synchronized (lock) {
+            try {
+                lock.wait(10_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (ok[0]) {
+            log("Modalità pano attiva");
+        }
+        return ok[0];
     }
 
     private void sleep(long ms) {
