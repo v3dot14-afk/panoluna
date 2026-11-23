@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<papywizard>
+  <shoot>
+    <pict roll="0" pitch="-52.0000" yaw="0.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="60.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="120.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="180.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="240.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="300.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="300.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="240.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="180.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="120.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="60.0000"/>
+    <pict roll="0" pitch="-31.2000" yaw="0.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="0.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="60.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="120.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="180.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="240.0000"/>
+    <pict roll="0" pitch="-10.4000" yaw="300.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="300.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="240.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="180.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="120.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="60.0000"/>
+    <pict roll="0" pitch="10.4000" yaw="0.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="0.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="60.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="120.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="180.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="240.0000"/>
+    <pict roll="0" pitch="31.2000" yaw="300.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="300.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="240.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="180.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="120.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="60.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="0.0000"/>
+  </shoot>
+</papywizard>

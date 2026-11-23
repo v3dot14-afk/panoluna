@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/surface"
+            android:contentDescription="@string/main_gimbal"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/preview_off"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/main_preview_off"
+            android:textColor="@color/text_dim"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/status_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/status_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/btn_connect"
+                style="@style/RoundButton.Small"
+                android:contentDescription="@string/main_connect"
+                android:src="@drawable/ic_link" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginTop="52dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/pano_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="@color/accent" />
+
+            <TextView
+                android:id="@+id/pano_counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <com.panoluna.app.ui.JoystickView
+            android:id="@+id/joystick"
+            android:layout_width="168dp"
+            android:layout_height="168dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="16dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="14dp"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_start"
+                style="@style/RoundButton.Accent"
+                android:layout_marginEnd="18dp"
+                android:contentDescription="@string/main_pano_start"
+                android:src="@drawable/ic_shutter" />
+
+            <ImageButton
+                android:id="@+id/btn_pause"
+                style="@style/RoundButton"
+                android:layout_marginEnd="18dp"
+                android:contentDescription="@string/main_pano_pause"
+                android:src="@drawable/ic_pause" />
+
+            <ImageButton
+                android:id="@+id/btn_resume"
+                style="@style/RoundButton"
+                android:layout_marginEnd="18dp"
+                android:contentDescription="@string/main_pano_resume"
+                android:src="@drawable/ic_play" />
+
+            <ImageButton
+                android:id="@+id/btn_stop"
+                style="@style/RoundButton"
+                android:contentDescription="@string/main_pano_stop"
+                android:src="@drawable/ic_stop" />
+        </LinearLayout>
+
+        <!-- Sotto i comandi rotondi: la riga di stato non deve coprirli. -->
+        <TextView
+            android:id="@+id/log_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="80dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/text_dim"
+            android:textSize="11sp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@color/surface"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_pano"
+            style="@style/BottomButton"
+            android:contentDescription="@string/main_pano_control"
+            android:src="@drawable/ic_pano" />
+
+        <ImageButton
+            android:id="@+id/btn_camera_settings"
+            style="@style/BottomButton"
+            android:contentDescription="@string/main_camera_settings"
+            android:src="@drawable/ic_camera" />
+
+        <ImageButton
+            android:id="@+id/btn_gallery"
+            style="@style/BottomButton"
+            android:contentDescription="@string/main_gallery"
+            android:src="@drawable/ic_gallery" />
+
+        <ImageButton
+            android:id="@+id/btn_app_settings"
+            style="@style/BottomButton"
+            android:contentDescription="@string/main_app_settings"
+            android:src="@drawable/ic_settings" />
+    </LinearLayout>
+</LinearLayout>

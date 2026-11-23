@@ -1,0 +1,134 @@
+# ptGui project file
+
+#-encoding utf8
+#-fileversion 49
+#-pathseparator \
+# PanoLuna - Insta360 Luna Ultra, 24 scatti, lente 1x 4:3
+# Campo orizzontale misurato: 77.7 gradi
+#-vfov 180
+#-resolution 300
+#-fixaspect 1
+#-outputfile 
+#-ccdcrop 1
+#-hasbeenoptimized 0
+#-hvcpmode 1
+#-jpegparameters 95 0
+#-tiffparameters 8bit packbits alpha_assoc
+#-psdparameters 8bit packbits layered
+#-honorexiforientation 0
+#-cameracurve 0 0 0 0 0
+#-vignettingparams 0 0 0 0 0
+#-wbexposure 0 0 0
+#-pmoptexposuremode auto
+#-pmoptvignettingmode disabled
+#-pmoptwbmode disabled
+#-pmoptflaremode disabled
+#-pmoptcameracurvemode disabled
+#-exposurecorrection 0
+#-tonemapldrpanorama 1
+#-blendweight 100 100
+#-optviewpoint 00
+#-useexif1
+#-batchbuilder_useexif 0
+#-stitcher ptgui
+#-blender ptgui
+#-blenderfeather -0.6
+#-optimizer ptgui
+#-interpolator default
+#-templateapplied
+#-imgrotate44
+#-imginactive
+#-linktoprevious
+#-previewinactive
+#-outputcrop 0 1 0 1
+#-location default
+#-viewingdirection default
+#-alignsettings_generatecp 0
+#-alignsettings_optimize 1
+#-alignsettings_optimizeprealign 1
+#-alignsettings_straighten 1
+#-alignsettings_fit 1
+#-alignsettings_chooseprojection 0
+#-alignsettings_setoptimumsize 1
+#-alignsettings_limitsize 500
+#-alignsettings_optimizeexposure 0
+#-hdrsettings_defaultlinkmode nolink
+#-hdrsettings_donotask 0
+#-batchsettings_align 0
+#-batchsettings_stitch 1
+#-batchsettings_stitchonlyifcontrolpoints 1
+#-defaultprojectfilenamemode firstsourceimage
+#-defaultprojectfilename_custom "_stitched"
+#-defaultprojectfoldermode sourcefolder
+#-defaultprojectfolder_custom ""
+#-defaultpanoramafilenamemode asproject
+#-defaultpanoramafilename_custom ""
+#-defaultpanoramafoldermode projectfolder
+#-defaultpanoramafolder_custom ""
+#-userelativesourceimagepaths 1
+#-optimizeraskreinitialize 1
+#-applytemplate_lens 1
+#-applytemplate_crop 0
+#-applytemplate_imageparams 1
+#-applytemplate_mask 0
+#-applytemplate_optimizer 1
+#-applytemplate_panoramasettings 1
+#-applytemplate_projectsettings 1
+#-theoreticalhfov -1
+#-rect_compression_x 0
+#-rect_compression_y 0
+#-vedutismo_compression_x 1
+#-stereographic_compression 1
+
+# Panorama settings:
+# Uscita sferica 2:1. 27654x13827 e' il massimo misurato con 24 scatti 1x.
+# PTGui limita il JPEG a 25000 px per lato: se 'Create Panorama' rifiuta,
+# ridurre a 24000x12000 o cambiare il formato in TIFF. In alternativa,
+# 'Set optimum size' ricalcola la dimensione esatta da questo progetto.
+p w27654 h13827 f2 v360 u20 n"JPEG g0 q95"
+m g1 i0
+
+# input images:
+#-dummyimage
+o w1 h1 y0 r0 p0 v77.7 a0 b0 c0 f0 d0 e0 g0 t0
+o f0 y0.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y0.0000 r0 p-31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y0.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p-10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y0.0000 r0 p10.4000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y0.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p31.2000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y300.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y240.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y180.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y120.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y60.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y0.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+
+# Control points:
+
+# optimizer:
+v v d e r1 p1 d2 e2 y2 r2 p2

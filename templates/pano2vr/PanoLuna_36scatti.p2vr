@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pano2VR project file - PanoLuna, Insta360 Luna Ultra -->
+<!--
+  Workflow: 24 scatti -> PTGui (PanoLuna_24scatti.pts) -> equirettangolare 2:1
+  Questo progetto punta gia' all'equirettangolare: aprirlo in pano2vr e
+  usare 'Crea tutto'. Per allineare le singole foto usare invece il
+  Papywizard XML (File > Import Papywizard in pano2vr Pro).
+-->
+<pano2vrconfig>
+  <panorama>
+    <input>
+      <patch/>
+      <filename>PanoLuna_36scatti_equirectangular.jpg</filename>
+      <type>auto</type>
+      <hfov>360</hfov>
+    </input>
+    <viewingparameter>
+      <pan>0</pan>
+      <tilt>0</tilt>
+      <fov>75</fov>
+    </viewingparameter>
+    <userdata>
+      <title>PanoLuna PanoLuna_36scatti_equirectangular.jpg</title>
+      <description>24 scatti Insta360 Luna Ultra, allineati con PTGui</description>
+    </userdata>
+    <hotspots/>
+    <output>
+      <html>
+        <enabled>1</enabled>
+        <filename>output/PanoLuna_out.html</filename>
+        <template>normal.ggt</template>
+        <values>
+          <value id="bgcolor">#000000</value>
+          <value id="showuserdata">true</value>
+        </values>
+      </html>
+      <flash>
+        <enabled>0</enabled>
+      </flash>
+      <qtvr>
+        <enabled>0</enabled>
+      </qtvr>
+      <transformations>
+        <transformation>
+          <type>equirectangular</type>
+          <filename>output/$(n)_$(s).jpg</filename>
+          <quality>95</quality>
+          <width>27654</width>
+          <height>13827</height>
+          <tilewidth>512</tilewidth>
+          <tileheight>512</tileheight>
+          <multires>1</multires>
+          <format>jpg</format>
+        </transformation>
+      </transformations>
+    </output>
+    <sounds/>
+  </panorama>
+</pano2vrconfig>

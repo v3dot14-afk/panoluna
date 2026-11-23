@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PanoLuna</string>
+
+    <!-- Schermata 1: connessione Wi-Fi -->
+    <string name="connect_title">PanoLuna</string>
+    <string name="connect_subtitle">Insta360 Luna Ultra</string>
+    <string name="connect_scan">Cerca Wi-Fi della camera</string>
+    <string name="connect_scanning">Ricerca…</string>
+    <string name="connect_password">Password Wi-Fi</string>
+    <string name="connect_button">Connetti</string>
+    <string name="connect_forget">Hai dimenticato la password? Si cancella in Impostazioni.</string>
+    <string name="connect_saved">Rete e password ricordate</string>
+    <string name="connect_settings">Impostazioni</string>
+    <string name="connect_camera_ip">IP camera</string>
+    <string name="connect_state_idle">Non connesso</string>
+    <string name="connect_state_scanning">Ricerca della camera…</string>
+    <string name="connect_state_connecting">Connessione a %1$s…</string>
+    <string name="connect_state_joining">Associazione alla rete Wi-Fi…</string>
+    <string name="connect_state_opening">Apertura della sessione di controllo…</string>
+    <string name="connect_state_connected">Connesso a %1$s</string>
+    <string name="connect_state_failed">Connessione fallita</string>
+    <string name="connect_no_network">Nessuna rete "Luna Ultra" trovata. Accendi la camera e riprova.</string>
+    <string name="connect_need_location">Serve il permesso di localizzazione per leggere la Wi-Fi della camera.</string>
+    <string name="connect_need_manual">Su Android 9 e precedenti collega la Wi-Fi della camera dalle impostazioni di sistema, poi premi Connetti.</string>
+
+    <!-- Schermata 2: mirino -->
+    <string name="main_preview_off">Anteprima non disponibile</string>
+    <string name="main_shots">%1$d / %2$d</string>
+    <string name="main_gimbal">Gimbal</string>
+    <string name="main_pano_control">Sparat Panoramica</string>
+    <string name="main_pano_start">Avvia</string>
+    <string name="main_pano_pause">Pausa</string>
+    <string name="main_pano_resume">Riprendi</string>
+    <string name="main_pano_stop">Stop</string>
+    <string name="main_battery">Batteria %1$d%%</string>
+    <string name="main_camera_settings">Impostazioni fotocamera</string>
+    <string name="main_gallery">Galleria</string>
+    <string name="main_app_settings">Impostazioni app</string>
+    <string name="main_connect">Connetti</string>
+    <string name="main_disconnect">Disconnetti</string>
+    <string name="main_log">Registro</string>
+
+    <!-- Controllo panoramica -->
+    <string name="pano_title">Spara Panoramica</string>
+    <string name="pano_rows">File</string>
+    <string name="pano_columns">Colonne</string>
+    <string name="pano_overlap">Sovrapposizione %</string>
+    <string name="pano_tilt_bottom">Inclinazione basso</string>
+    <string name="pano_tilt_top">Inclinazione alto</string>
+    <string name="pano_delay">Attesa dopo lo scatto (ms)</string>
+    <string name="pano_total">Scatti: %1$d</string>
+    <string name="pano_start">Avvia la panoramica</string>
+    <string name="pano_download">Scarica le foto sul telefono</string>
+    <string name="pano_export">Esporta il template PTGui</string>
+    <string name="pano_export_ok">Template PTGui salvato in %1$s</string>
+    <string name="pano_export_csv">Esporta la tabella degli angoli (CSV)</string>
+    <string name="pano_export_job">Esporta il lavoro completo (PTGui + Pano2VR + CSV)</string>
+    <string name="pano_export_job_ok">Lavoro salvato in %1$s</string>
+    <string name="pano_plan_24">24 scatti (4×6)</string>
+    <string name="pano_plan_18">18 scatti (3×6)</string>
+    <string name="pano_plan_12">12 scatti (3×4)</string>
+    <string name="pano_plan_36">36 scatti (6×6)</string>
+
+    <!-- Impostazioni fotocamera -->
+    <string name="cam_title">Fotocamera e scatto</string>
+    <string name="cam_photo_size">Risoluzione foto</string>
+    <string name="cam_zoom">Zoom ottico</string>
+    <string name="cam_mode">Modalità</string>
+    <string name="cam_auto">Automatica</string>
+    <string name="cam_pro">Pro (manuale)</string>
+    <string name="cam_iso">ISO</string>
+    <string name="cam_shutter">Otturatore</string>
+    <string name="cam_ev">Compensazione EV</string>
+    <string name="cam_wb">Bilanciamento bianco</string>
+    <string name="cam_brightness">Luminosità</string>
+    <string name="cam_raw">RAW (DNG) + JPG</string>
+    <string name="cam_apply">Applica alla camera</string>
+    <string name="cam_applied">Impostazioni applicate</string>
+    <string name="cam_gimbal_speed">Velocità gimbal</string>
+
+    <!-- Galleria -->
+    <string name="gallery_title">Galleria del telefono</string>
+    <string name="gallery_empty">Nessuna foto. Scarica gli scatti dalla fotocamera.</string>
+    <string name="gallery_delete">Elimina</string>
+    <string name="gallery_share">Condividi</string>
+    <string name="gallery_select_all">Seleziona tutto</string>
+    <string name="gallery_selected">%1$d selezionate</string>
+
+    <!-- Impostazioni app -->
+    <string name="settings_title">Impostazioni</string>
+    <string name="settings_camera">Fotocamera</string>
+    <string name="settings_host">Indirizzo IP</string>
+    <string name="settings_port">Porta</string>
+    <string name="settings_timeout">Timeout comando (ms)</string>
+    <string name="settings_wifi">Wi-Fi della camera</string>
+    <string name="settings_wifi_forget">Elimina rete e password ricordate</string>
+    <string name="settings_wifi_forget_done">Credenziali Wi-Fi cancellate</string>
+    <string name="settings_gimbal">Gimbal</string>
+    <string name="settings_pan_limits">Corsa pan (°)</string>
+    <string name="settings_tilt_limits">Corsa tilt (°)</string>
+    <string name="settings_angular_scale">Fattore angolare misurato</string>
+    <string name="settings_invert_pan">Inverti pan</string>
+    <string name="settings_invert_tilt">Inverti tilt</string>
+    <string name="settings_data">Dati</string>
+    <string name="settings_clear">Elimina tutti i dati dell\'app</string>
+    <string name="settings_clear_done">Dati dell\'app cancellati</string>
+    <string name="settings_templates">Template</string>
+    <string name="settings_templates_info">I template PTGui e Pano2VR sono in /templates e si copiano nella cartella dei template dei due programmi.</string>
+    <string name="settings_about">Informazioni</string>
+    <string name="settings_version">Versione</string>
+</resources>
