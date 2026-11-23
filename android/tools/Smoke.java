@@ -82,11 +82,18 @@ public final class Smoke {
         PanoPlan.Shot row2first = plan.shots().get(6);
         check(Math.abs(row2first.pan - 300f) < 0.001f, "serpentino riga 2 pan=300");
 
-        // 8. PTGui: 25 linee o, prima e dummy, p-line 2:1
+        // 8. PTGui: 25 linee o, dummy a posto ultimo con proiezione f2, p-line 2:1
         String pts = plan.toPtGuiTemplate("PanoLuna_24scatti");
         int oLines = 0;
-        for (String line : pts.split("\r\n")) if (line.startsWith("o ")) oLines++;
-        check(oLines == 25, "25 linee o (dummy + 24), trovate " + oLines);
+        String lastO = "";
+        for (String line : pts.split("\r\n")) {
+            if (line.startsWith("o ")) {
+                oLines++;
+                lastO = line;
+            }
+        }
+        check(oLines == 25, "25 linee o (24 foto + dummy), trovate " + oLines);
+        check(lastO.contains("f2"), "dummy o-line ultimo con f2: " + lastO);
         check(pts.contains("p w27654 h13827 f2 v360"), "p-line 2:1");
         check(pts.contains("#-fileversion 49"), "fileversion 49");
         check(pts.contains("v77.7"), "hfov misurato 77.7");

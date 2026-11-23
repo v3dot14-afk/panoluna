@@ -237,14 +237,15 @@ public final class PanoPlan {
         sb.append("p w27654 h13827 f2 v360 u20 n\"JPEG g0 q95\"\r\n");
         sb.append("m g1 i0\r\n");
         sb.append("\r\n# input images:\r\n");
-        sb.append("#-dummyimage\r\n");
-        sb.append("o w1 h1 y0 r0 p0 v").append(MEASURED_HFOV_DEG)
-                .append(" a0 b0 c0 f0 d0 e0 g0 t0\r\n");
         for (Shot s : shots) {
             sb.append("o f0 y").append(fmt(s.pan)).append(" r0 p").append(fmt(s.tilt))
                     .append(" v").append(MEASURED_HFOV_DEG)
                     .append(" a0 b0 c0 d0 e0 g0 t0\r\n");
         }
+        sb.append("\r\n# immagine demo sostituita da PTGui con la prima foto:\r\n");
+        sb.append("#-dummyimage\r\n");
+        sb.append("o w1 h1 y0 r0 p0 v").append(MEASURED_HFOV_DEG)
+                .append(" a0 b0 c0 f2 d0 e0 g0 t0\r\n");
         sb.append("\r\n# Control points:\r\n\r\n");
         sb.append("# optimizer:\r\n");
         sb.append("v v d e r1 p1 d2 e2 y2 r2 p2\r\n");
