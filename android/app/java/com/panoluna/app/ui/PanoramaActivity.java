@@ -358,11 +358,10 @@ public final class PanoramaActivity extends Activity {
      * Avvia la live view una sola volta alla connessione.
      *
      * Il gimbal risponde alla camera solo mentre è in funzione un preview in diretta.
-     * Si prova prima il preview MJPEG via OSC: se la camera lo offre, quella stessa
-     * richiesta apre il preview e il gate del gimbal è soddisfatto (come nell'app di
-     * riferimento, che in questo caso non invia START_LIVE_STREAM). Se l'endpoint OSC
-     * non funziona, si passa al flusso TCP START_LIVE_STREAM, che è la condizione
-     * necessaria affinché il gimbal (e lo scatto) rispondano.
+     * Il flusso TCP START_LIVE_STREAM è la condizione necessaria: si apre sempre,
+     * indipendentemente dal preview OSC (che serve solo per mostrare l'anteprima e,
+     * su alcuni firmware, non apre il gate). Il preview MJPEG via OSC si avvia
+     * parallelamente per il display.
      */
     private void ensureLiveView() {
         if (liveViewStarted) {
@@ -370,12 +369,16 @@ public final class PanoramaActivity extends Activity {
         }
         liveViewStarted = true;
         previewFrames = false;
+        // Gate del gimbal: flusso TCP di live view, sempre.
+        startStreamFallback();
+        // Display: anteprima MJPEG via OSC (se la camera la offre).
         startPreview();
     }
 
     /**
-     * Fallback: se il preview OSC non è disponibile, avvia il flusso TCP di live view.
-     * Questo è ciò che abilita il gimbal quando l'anteprima MJPEG non parte.
+     * Avvia il flusso TCP di live view (START_LIVE_STREAM). È ciò che abilita il
+     * gimbal: la camera honora i comandi del gimbal solo mentre trasmette il
+     * preview. Si chiama sempre alla connessione (non solo come fallback).
      */
     private void startStreamFallback() {
         if (streamStarted) {
@@ -387,17 +390,17 @@ public final class PanoramaActivity extends Activity {
                 @Override
                 public void onResult(Boolean value) {
                     log(value != null && value
-                            ? "Flusso live avviato (gimbal abilitato)"
-                            : "Flusso live inviato senza conferma");
+                            ? "Live-stream запущен (гимбал активирован)"
+                            : "Live-stream отправлен без подтверждения");
                 }
 
                 @Override
                 public void onError(String message) {
-                    log("Live view TCP non disponibile: " + message);
+                    log("Live-stream TCP недоступен: " + message);
                 }
             });
         } catch (Throwable t) {
-            log("Live view TCP non disponibile: " + t.getMessage());
+            log("Live-stream TCP недоступен: " + t.getMessage());
         }
     }
 
