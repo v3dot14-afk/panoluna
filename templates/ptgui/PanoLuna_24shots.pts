@@ -3,8 +3,8 @@
 #-encoding utf8
 #-fileversion 49
 #-pathseparator \
-# PanoLuna - Insta360 Luna Ultra, 24 scatti, lente 1x 4:3
-# Campo orizzontale misurato: 77.7 gradi
+# PanoLuna - Insta360 Luna Ultra, 24 кадра, оптика 1x 4:3
+# Измеренный горизонтальный угол: 77.7 градусов
 #-vfov 180
 #-resolution 300
 #-fixaspect 1
@@ -81,10 +81,10 @@
 #-stereographic_compression 1
 
 # Panorama settings:
-# Uscita sferica 2:1. 27654x13827 e' il massimo misurato con 24 scatti 1x.
-# PTGui limita il JPEG a 25000 px per lato: se 'Create Panorama' rifiuta,
-# ridurre a 24000x12000 o cambiare il formato in TIFF. In alternativa,
-# 'Set optimum size' ricalcola la dimensione esatta da questo progetto.
+# Выход сферический 2:1. 27654x13827 — максимум, измеренный для 24 кадров 1x.
+# PTGui ограничивает JPEG 25000 px на сторону: если 'Create Panorama' отклоняет,
+# убавьте до 24000x12000 или смените формат на TIFF. В случае необходимости,
+# 'Set optimum size' пересчитывает точную размерность из этого проекта.
 p w27654 h13827 f2 v360 u20 n"JPEG g0 q95"
 m g1 i0
 

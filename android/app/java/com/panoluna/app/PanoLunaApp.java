@@ -70,7 +70,7 @@ public final class PanoLunaApp extends Application {
 
             @Override
             public void onDisconnected(final String reason) {
-                Log.w(TAG, "Connessione chiusa: " + reason);
+                Log.w(TAG, "Соединение закрыто: " + reason);
                 dispatchState(false, reason);
             }
 

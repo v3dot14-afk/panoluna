@@ -53,6 +53,11 @@ public final class PanoramaActivity extends Activity {
     private volatile boolean liveViewStarted;
     /** OSC 预览失败后，是否已经启动了 TCP 流（gimbal 门控的兜底）。 */
     private volatile boolean streamStarted;
+    /** Пришёл хотя бы один кадр OSC-MJPEG — тогда gate гимбала уже удовлетворён. */
+    private volatile boolean previewFrames;
+
+    /** Тема, применённая к этой активити: при возвращении с измененной темой пересоздаём. */
+    private int appliedThemeMode = Integer.MIN_VALUE;
 
     private final Runnable joystickTick = new Runnable() {
         @Override
@@ -158,6 +163,7 @@ public final class PanoramaActivity extends Activity {
         super.onCreate(savedInstanceState);
         app = PanoLunaApp.get(this);
         app.applyTheme(this);
+        appliedThemeMode = app.settings().themeMode();
         setContentView(R.layout.activity_panorama);
         preview = new MjpegPreview();
 
@@ -257,6 +263,13 @@ public final class PanoramaActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        // Тему можно поменять в Настройках: при возвращении на эту панель активити
+        // не пересоздаётся автоматически, и onCreate (где applyTheme) не вызовется.
+        // Сравниваем и пересоздаём, чтобы тема применилась без перезапуска приложения.
+        if (app.settings().themeMode() != appliedThemeMode) {
+            recreate();
+            return;
+        }
         app.addConnectionListener(connectionListener);
         timer.post(joystickTick);
         // Il gimbal risponde solo mentre la camera trasmette il preview. Quando la
@@ -282,6 +295,7 @@ public final class PanoramaActivity extends Activity {
                     new MjpegPreview.Listener() {
                         @Override
                         public void onFrame(Bitmap frame) {
+                            previewFrames = true;
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -306,6 +320,11 @@ public final class PanoramaActivity extends Activity {
 
                         @Override
                         public void onClosed() {
+                            // Поток OSC закрылся. Если кадров не пришло, preview не активен,
+                            // и gate гимбала не удовлетворён: бросаемся на TCP-поток.
+                            if (!previewFrames) {
+                                startStreamFallback();
+                            }
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -350,6 +369,7 @@ public final class PanoramaActivity extends Activity {
             return;
         }
         liveViewStarted = true;
+        previewFrames = false;
         startPreview();
     }
 

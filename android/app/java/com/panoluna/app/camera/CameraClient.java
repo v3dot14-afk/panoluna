@@ -29,7 +29,11 @@ public final class CameraClient {
     private final Settings settings;
     private final CameraConnection connection;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    // Пул, а не один поток: enterLiveView e awaitCaptureIdle ждут ответа секундами и
+    // блокировали бы единый io-поток, мешая другим командам (например enterPanoMode)
+    // дойти до камеры вовремя. Камера коррелирует по requestId, поэтому параллельно
+    // можно.
+    private final ExecutorService io = Executors.newFixedThreadPool(4);
     private volatile String lastError;
 
     public CameraClient(Settings settings, CameraConnection connection) {

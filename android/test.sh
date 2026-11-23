@@ -44,4 +44,4 @@ mkdir -p "$WORK/classes"
     "$APP/java/com/panoluna/app/proto/Ucd2.java" \
     "$APP/java/com/panoluna/app/camera/PanoPlan.java" \
     "$TOOLS/Smoke.java"
-"$JAVA" -cp "$WORK/classes" Smoke
+"$JAVA" -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "$WORK/classes" Smoke

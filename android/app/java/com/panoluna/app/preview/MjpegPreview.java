@@ -99,7 +99,7 @@ public final class MjpegPreview {
             conn.getOutputStream().write(REQUEST.getBytes("UTF-8"));
             conn.getOutputStream().flush();
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                postError(listener, "L'anteprima ha risposto " + conn.getResponseCode());
+                postError(listener, "Предпросмотр ответил " + conn.getResponseCode());
                 return;
             }
             InputStream in = new BufferedInputStream(conn.getInputStream(), 64 * 1024);

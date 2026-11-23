@@ -96,7 +96,7 @@ public final class PanoShooter {
         stopRequested.set(false);
         gimbal.resetPosition(0f, 0f);
         setState(State.RUNNING);
-        log("Panoramica da " + plan.size() + " scatti");
+        log("Панорамма из " + plan.size() + " кадров");
         worker.execute(new Runnable() {
             @Override
             public void run() {
@@ -146,12 +146,13 @@ public final class PanoShooter {
         List<PanoPlan.Shot> shots = plan.shots();
         // La camera deve essere in modalità pano prima di scattare: senza
         // photo_sub_mode = PHOTO_INSTA_PANO lo TAKE_PICTURE non produce lo
-        // scatto panoramico. Si attende la conferma prima di partire.
+        // scatto panoramico. Si tenta di attivarla; se la camera не отвечает
+        // вовремя, это не повод сбрасывать съемку: возможно, режим уже активен
+        // или команда ляжет позже. Логируем и продолжаем.
         if (!enterPanoMode()) {
-            lastError = "Impossibile mettere la camera in modalità pano";
-            setState(State.ERROR);
-            publishError(lastError);
-            return;
+            log("Не удалось подтвердить панорамный режим: съемка продолжается");
+        } else {
+            log("Панорамный режим подтверждён");
         }
         while (cursor < shots.size()) {
             if (stopRequested.get()) {
@@ -182,7 +183,7 @@ public final class PanoShooter {
             setState(State.PAUSED);
         } else {
             setState(State.DONE);
-            log("Panoramica completa: " + shots.size() + " scatti");
+            log("Панорамма завершена: " + shots.size() + " кадров");
         }
     }
 
@@ -208,7 +209,7 @@ public final class PanoShooter {
             }
         }
         if (!reached[0]) {
-            log("Il gimbal non ha raggiunto il punto: si scatta comunque");
+            log("Гимбал не достиг точки: фото делается всё равно");
         }
         // Il gimbal deve essere fermo durante la posa: si lascia un istante di assestamento.
         sleep(350L);
@@ -245,7 +246,7 @@ public final class PanoShooter {
         if (error[0] != null) {
             lastError = error[0];
             setState(State.ERROR);
-            publishError("Scatto " + (cursor + 1) + " rifiutato: " + error[0]);
+            publishError("Снимок " + (cursor + 1) + " отклонён: " + error[0]);
             return;
         }
         if (uri[0] != null) {
@@ -281,7 +282,7 @@ public final class PanoShooter {
             }
         }
         if (!idle[0]) {
-            log("La camera e' ancora occupata: attendo prima del punto successivo");
+            log("Камера ещё занята: жду перед следующей точкой");
         }
         sleep(settings.getPanoShotDelayMs());
     }
@@ -315,7 +316,7 @@ public final class PanoShooter {
             }
         }
         if (ok[0]) {
-            log("Modalità pano attiva");
+            log("Панорамный режим активирован");
         }
         return ok[0];
     }

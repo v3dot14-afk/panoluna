@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Pano2VR project file - PanoLuna, Insta360 Luna Ultra -->
 <!--
-  Workflow: 24 scatti -> PTGui (PanoLuna_24scatti.pts) -> equirettangolare 2:1
-  Questo progetto punta gia' all'equirettangolare: aprirlo in pano2vr e
-  usare 'Crea tutto'. Per allineare le singole foto usare invece il
-  Papywizard XML (File > Import Papywizard in pano2vr Pro).
+  Workflow: 24 кадра -> PTGui (PanoLuna_24scatti.pts) -> equirectangular 2:1
+  Этот проект уже нацелен на equirectangular: открыть в pano2vr и
+  использовать 'Crea tutto'. Для выравнивания отдельных фото использовать
+  Papywizard XML (File > Import Papywizard в pano2vr Pro).
 -->
 <pano2vrconfig>
   <panorama>
     <input>
       <patch/>
-      <filename>PanoLuna_24scatti_equirectangular.jpg</filename>
+      <filename>PanoLuna_24shots_equirectangular.jpg</filename>
       <type>auto</type>
       <hfov>360</hfov>
     </input>
@@ -20,8 +20,8 @@
       <fov>75</fov>
     </viewingparameter>
     <userdata>
-      <title>PanoLuna PanoLuna_24scatti_equirectangular.jpg</title>
-      <description>24 scatti Insta360 Luna Ultra, allineati con PTGui</description>
+      <title>PanoLuna PanoLuna_24shots_equirectangular.jpg</title>
+      <description>24 кадра Insta360 Luna Ultra, выровненные в PTGui</description>
     </userdata>
     <hotspots/>
     <output>

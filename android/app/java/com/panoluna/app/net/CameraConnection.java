@@ -115,7 +115,7 @@ public final class CameraConnection {
         socket = null;
         input = null;
         output = null;
-        failPending("Sessione chiusa");
+        failPending("Сеанс закрыт");
     }
 
     /** Invia un comando e attende la risposta correlata dal requestId. */
@@ -141,7 +141,7 @@ public final class CameraConnection {
             public void run() {
                 if (pending.remove(id) != null) {
                     future.completeExceptionally(new IllegalStateException(
-                            "Nessuna risposta per il comando " + code + " entro " + timeoutMs + " ms"));
+                            "Нет ответа на команду " + code + " за " + timeoutMs + " мс"));
                 }
             }
         }, timeoutMs, TimeUnit.MILLISECONDS);
