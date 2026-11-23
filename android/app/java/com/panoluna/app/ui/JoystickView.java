@@ -8,6 +8,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.panoluna.app.R;
+
 /**
  * La levetta tattile del gimbal: un cerchio con un pomello.
  *
@@ -51,20 +53,34 @@ public final class JoystickView extends View {
     }
 
     private void init() {
+        // Цвета берутся из ресурсов, чтобы джойстик читал correctly в обеих темах.
+        int ringColor = resolveColor(R.color.joystick_ring, "#3A3F45");
+        int crossColor = resolveColor(R.color.joystick_cross, "#2A2E33");
+        int knobColor = resolveColor(R.color.joystick_knob, "#FFB300");
+        int knobEdgeColor = resolveColor(R.color.joystick_knob_edge, "#121417");
+
         ring.setStyle(Paint.Style.STROKE);
         ring.setStrokeWidth(3f);
-        ring.setColor(Color.parseColor("#3A3F45"));
+        ring.setColor(ringColor);
 
         cross.setStyle(Paint.Style.STROKE);
         cross.setStrokeWidth(1.5f);
-        cross.setColor(Color.parseColor("#2A2E33"));
+        cross.setColor(crossColor);
 
         knob.setStyle(Paint.Style.FILL);
-        knob.setColor(Color.parseColor("#FFB300"));
+        knob.setColor(knobColor);
 
         knobEdge.setStyle(Paint.Style.STROKE);
         knobEdge.setStrokeWidth(2f);
-        knobEdge.setColor(Color.parseColor("#121417"));
+        knobEdge.setColor(knobEdgeColor);
+    }
+
+    private int resolveColor(int resId, String fallback) {
+        try {
+            return getResources().getColor(resId, getContext().getTheme());
+        } catch (Exception e) {
+            return Color.parseColor(fallback);
+        }
     }
 
     public void setListener(Listener listener) {

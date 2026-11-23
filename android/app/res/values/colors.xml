@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background">#121417</color>
-    <color name="surface">#1D2024</color>
-    <color name="surface_high">#2A2E33</color>
-    <color name="text">#ECEFF1</color>
-    <color name="text_dim">#9AA0A6</color>
-    <color name="accent">#FFB300</color>
-    <color name="accent_dark">#C79100</color>
-    <color name="ok">#43A047</color>
-    <color name="warn">#E53935</color>
-    <color name="line">#3A3F45</color>
+    <!-- Светлая тема (базовая): используется, когда ночной режим ЗАКЛЮЧЁН.
+         При включенном ночном режиме применяются значения из values-night. -->
+    <color name="background">#F2F3F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_high">#E9ECEF</color>
+    <color name="text">#1B1F24</color>
+    <color name="text_dim">#6B7280</color>
+    <color name="accent">#F59E0B</color>
+    <color name="accent_dark">#B45309</color>
+    <color name="ok">#16A34A</color>
+    <color name="warn">#DC2626</color>
+    <color name="line">#E2E5EA</color>
+
+    <!-- Цвета джойстика: видны и на светлом фоне. -->
+    <color name="joystick_ring">#C9CED6</color>
+    <color name="joystick_cross">#E2E5EA</color>
+    <color name="joystick_knob">#F59E0B</color>
+    <color name="joystick_knob_edge">#FFFFFF</color>
 </resources>

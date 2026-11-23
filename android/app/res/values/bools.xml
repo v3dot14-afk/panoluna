@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Тёмная тема: иконки статус-бара светлые. -->
-    <bool name="window_light_status_bar">false</bool>
+    <!-- Светлая тема: фон светлый, иконки статус-бара — тёмные. -->
+    <bool name="window_light_status_bar">true</bool>
 </resources>

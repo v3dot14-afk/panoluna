@@ -49,6 +49,11 @@ public final class PanoramaActivity extends Activity {
     private float joyTilt;
     private boolean joystickActive;
 
+    /** 已经开始了 live-view 初始化（OSC 预览或 TCP 流），避免重复启动。 */
+    private volatile boolean liveViewStarted;
+    /** OSC 预览失败后，是否已经启动了 TCP 流（gimbal 门控的兜底）。 */
+    private volatile boolean streamStarted;
+
     private final Runnable joystickTick = new Runnable() {
         @Override
         public void run() {
@@ -254,20 +259,10 @@ public final class PanoramaActivity extends Activity {
         super.onStart();
         app.addConnectionListener(connectionListener);
         timer.post(joystickTick);
+        // Il gimbal risponde solo mentre la camera trasmette il preview. Quando la
+        // camera è già connessa (o si ricolleca), avvia la live view prima dell'anteprima.
         if (app.isCameraConnected()) {
-            // Il gimbal risponde solo mentre la camera trasmette il preview:
-            // avvia la live view prima di mostrare l'anteprima.
-            app.camera().enterLiveView(new com.panoluna.app.camera.CameraClient.Callback<Boolean>() {
-                @Override
-                public void onResult(Boolean value) {
-                    startPreview();
-                }
-
-                @Override
-                public void onError(String message) {
-                    startPreview();
-                }
-            });
+            ensureLiveView();
         }
     }
 
@@ -298,6 +293,9 @@ public final class PanoramaActivity extends Activity {
 
                         @Override
                         public void onError(final String message) {
+                            // L'anteprima OSC non è disponibile: avvii il flusso TCP di live
+                            // view, che è la condizione per far rispondere il gimbal.
+                            startStreamFallback();
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -326,11 +324,60 @@ public final class PanoramaActivity extends Activity {
         if (connected) {
             statusText.setText(getString(R.string.connect_state_connected,
                     app.settings().getHost()));
-            startPreview();
+            ensureLiveView();
         } else {
             statusText.setText(R.string.connect_state_idle);
             previewOff.setText(reason == null
                     ? getString(R.string.main_preview_off) : reason);
+            // La prossima connessione riavvia la live view da zero.
+            liveViewStarted = false;
+            streamStarted = false;
+        }
+    }
+
+    /**
+     * Avvia la live view una sola volta alla connessione.
+     *
+     * Il gimbal risponde alla camera solo mentre è in funzione un preview in diretta.
+     * Si prova prima il preview MJPEG via OSC: se la camera lo offre, quella stessa
+     * richiesta apre il preview e il gate del gimbal è soddisfatto (come nell'app di
+     * riferimento, che in questo caso non invia START_LIVE_STREAM). Se l'endpoint OSC
+     * non funziona, si passa al flusso TCP START_LIVE_STREAM, che è la condizione
+     * necessaria affinché il gimbal (e lo scatto) rispondano.
+     */
+    private void ensureLiveView() {
+        if (liveViewStarted) {
+            return;
+        }
+        liveViewStarted = true;
+        startPreview();
+    }
+
+    /**
+     * Fallback: se il preview OSC non è disponibile, avvia il flusso TCP di live view.
+     * Questo è ciò che abilita il gimbal quando l'anteprima MJPEG non parte.
+     */
+    private void startStreamFallback() {
+        if (streamStarted) {
+            return;
+        }
+        streamStarted = true;
+        try {
+            app.camera().enterLiveView(new com.panoluna.app.camera.CameraClient.Callback<Boolean>() {
+                @Override
+                public void onResult(Boolean value) {
+                    log(value != null && value
+                            ? "Flusso live avviato (gimbal abilitato)"
+                            : "Flusso live inviato senza conferma");
+                }
+
+                @Override
+                public void onError(String message) {
+                    log("Live view TCP non disponibile: " + message);
+                }
+            });
+        } catch (Throwable t) {
+            log("Live view TCP non disponibile: " + t.getMessage());
         }
     }
 
