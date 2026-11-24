@@ -157,6 +157,12 @@ public final class ProtoCodes {
         public static final int ZOOM_SCALE = 53;
         public static final int PANO_ASPECT = 98;
         public static final int FILTER_INTENSITY = 104;
+        /**
+         * Фокус. Точный номер неизвестен: в прошивке 1.0.288 имена
+         * AF_LENS_INFO / AUTO_FOCUS_MODE есть, а числа к ним зашифрованы
+         * (AppShield). Поэтому номер не задаётся здесь, а определяется
+         * зондом на аппарате — см. CameraClient.prospectPhotoOptionTypes.
+         */
     }
 
     public static final class PhotographyOptionsField {
@@ -180,6 +186,16 @@ public final class ProtoCodes {
         public static final int PROGRAM = 1;
         public static final int ISO = 2;
         public static final int SHUTTER_SPEED = 3;
+    }
+
+    /**
+     * Режимы автофокуса. Значения — общепринятый порядок для этих камер;
+     * применяются только к типу, который найдёт зонд.
+     */
+    public static final class AutoFocusMode {
+        public static final int AF_C = 0;
+        public static final int AF_S = 1;
+        public static final int PRODUCT = 2;
     }
 
     public static final class ExposureProgram {

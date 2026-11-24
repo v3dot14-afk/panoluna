@@ -20,6 +20,16 @@ import com.panoluna.app.R;
  */
 public final class SplashActivity extends Activity implements PanoLunaApp.ConnectionListener {
 
+    /**
+     * Язык интерфейса выбирается в настройках и подставляется здесь: строки
+     * берутся из нужного values-* ещё до создания окна, и смена языка применяется
+     * без перезапуска приложения.
+     */
+    @Override
+    protected void attachBaseContext(android.content.Context base) {
+        super.attachBaseContext(PanoLunaApp.get(base.getApplicationContext()).wrapLanguage(base));
+    }
+
     private PanoLunaApp app;
     private TextView statusText;
     private Button btnConnect;
@@ -28,9 +38,10 @@ public final class SplashActivity extends Activity implements PanoLunaApp.Connec
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        app = PanoLunaApp.get(this);
+        // Тема — до super.onCreate: иначе окно уже создано с прежней темой.
+        app = PanoLunaApp.get(getApplicationContext());
         app.applyTheme(this);
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
         statusText = findViewById(R.id.statusText);

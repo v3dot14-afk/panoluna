@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Атрибуты темы. Цвета в layout и drawable ссылаются на эти атрибуты (?attr/...),
+      а не на @color/... напрямую.
+
+      Почему так: в values/ и values-night/ лежат ОДНИ И ТЕ ЖЕ имена цветов, и выбор
+      между ними делает только система по ночному режиму. Приложение не может
+      переключить их само: UiModeManager.setApplicationNightMode существует лишь с
+      Android 12 (API 31), а minSdk здесь 24 — на более старых телефонах вызов молча
+      падал, и светлая тема не включалась никогда.
+
+      С атрибутами каждая тема несёт свою палитру, и setTheme() переключает цвета
+      сам, без участия системы.
+    -->
+    <attr name="pl_background" format="color" />
+    <attr name="pl_surface" format="color" />
+    <attr name="pl_surface_high" format="color" />
+    <attr name="pl_text" format="color" />
+    <attr name="pl_text_dim" format="color" />
+    <attr name="pl_accent" format="color" />
+    <attr name="pl_accent_dark" format="color" />
+    <attr name="pl_ok" format="color" />
+    <attr name="pl_warn" format="color" />
+    <attr name="pl_line" format="color" />
+    <attr name="pl_window_light_status_bar" format="boolean" />
+</resources>

@@ -162,6 +162,70 @@ public final class CameraClient {
                 }, callback);
     }
 
+    /**
+     * Ищет номер типа опции для фокуса.
+     *
+     * В прошивке 1.0.288 имена AF_LENS_INFO / AUTO_FOCUS_MODE присутствуют, но числа
+     * к ним зашифрованы, поэтому фокус нельзя задать «по имени». Зато камера сама
+     * перечисляет существующие типы опций, если запросить их без списка. GET ничего
+     * не меняет, поэтому зонд безопасен.
+     *
+     * Известные типы отбрасываются: остаток — то, чего в нашей схеме ещё нет, и
+     * среди него лежит фокус. Найденные номера пишутся в журнал: по ним можно
+     * задать режим и убедиться, что камера его приняла.
+     */
+    public void probeFocusOptionType(final Callback<int[]> callback) {
+        final int[] known = new int[]{
+                ProtoCodes.PhotographyOptionType.BRIGHTNESS,
+                ProtoCodes.PhotographyOptionType.SHARPNESS,
+                ProtoCodes.PhotographyOptionType.EXPOSURE_BIAS,
+                ProtoCodes.PhotographyOptionType.EXPOSURE_MODE,
+                ProtoCodes.PhotographyOptionType.WHITE_BALANCE,
+                ProtoCodes.PhotographyOptionType.STILL_EXPOSURE_OPTIONS,
+                ProtoCodes.PhotographyOptionType.RAW_CAPTURE_TYPE,
+                ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
+                ProtoCodes.PhotographyOptionType.RECORD_RESOLUTION,
+                ProtoCodes.PhotographyOptionType.COLOR_MODE,
+                ProtoCodes.PhotographyOptionType.WHITE_BALANCE_VALUE,
+                ProtoCodes.PhotographyOptionType.ZOOM_SCALE,
+                ProtoCodes.PhotographyOptionType.PANO_ASPECT,
+                ProtoCodes.PhotographyOptionType.FILTER_INTENSITY,
+        };
+        run(ProtoCodes.GET_PHOTOGRAPHY_OPTIONS,
+                Messages.getAllPhotographyOptionTypes(ProtoCodes.FunctionMode.NORMAL_IMAGE),
+                settings.getRequestTimeoutMs(), new ValueReader<int[]>() {
+                    @Override
+                    public int[] read(Ucd2.Frame frame) {
+                        java.util.Set<Integer> found = new java.util.TreeSet<Integer>();
+                        Proto.Reader r = new Proto.Reader(frame.payload);
+                        // Поле 1 повторяется: камера перечисляет типы, которые знает.
+                        for (Proto.Field f : r.fields()) {
+                            if (f.number == 1 && f.wireType == Proto.WIRE_VARINT) {
+                                found.add((int) f.varint);
+                            }
+                        }
+                        java.util.List<Integer> unknown = new java.util.ArrayList<Integer>();
+                        for (Integer type : found) {
+                            boolean isKnown = false;
+                            for (int k : known) {
+                                if (k == type) {
+                                    isKnown = true;
+                                    break;
+                                }
+                            }
+                            if (!isKnown) {
+                                unknown.add(type);
+                            }
+                        }
+                        int[] result = new int[unknown.size()];
+                        for (int i = 0; i < result.length; i++) {
+                            result[i] = unknown.get(i);
+                        }
+                        return result;
+                    }
+                }, callback);
+    }
+
     public void fetchPhotoOptions(final Callback<PhotoOptions> callback) {
         final int[] types = new int[]{
                 ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
@@ -440,6 +504,26 @@ public final class CameraClient {
     public void setPhotoSubMode(final int subMode, final Callback<Boolean> callback) {
         run(ProtoCodes.SET_OPTIONS,
                 Messages.setPhotoSubMode(subMode),
+                settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {
+                    @Override
+                    public Boolean read(Ucd2.Frame frame) {
+                        return Boolean.TRUE;
+                    }
+                }, callback);
+    }
+
+    /**
+     * Пробует запереть фокус: AF-S по заданному типу опции.
+     *
+     * Возвращает true, если камера приняла команду. Ответ 200 здесь означает только
+     * «принято», а не «применено»: на несуществующий тип камера тоже отвечает 200 с
+     * пустым телом. Поэтому режим выставляется по всем найденным типам и затем
+     * перечитывается, а в журнал пишется, что осталось.
+     */
+    public void tryLockFocus(final int optionType, final Callback<Boolean> callback) {
+        run(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
+                Messages.setFocusMode(optionType, ProtoCodes.AutoFocusMode.AF_S,
+                        ProtoCodes.FunctionMode.NORMAL_IMAGE),
                 settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {
                     @Override
                     public Boolean read(Ucd2.Frame frame) {

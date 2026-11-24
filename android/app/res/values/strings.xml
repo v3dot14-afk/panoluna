@@ -66,6 +66,7 @@
     <string name="main_app_settings">Настройки приложения</string>
     <string name="main_connect">Подключиться</string>
     <string name="main_disconnect">Отключиться</string>
+    <string name="log_hint">Долгое нажатие по журналу — скопировать весь лог</string>
     <string name="main_log">Журнал</string>
 
     <!-- Управление панорамой -->
@@ -77,6 +78,7 @@
     <string name="pano_tilt_top">Наклон вверх</string>
     <string name="pano_delay">Пауза после кадра (мс)</string>
     <string name="pano_total">Кадров: %1$d</string>
+    <string name="pano_start_failed">Старт не выполнен</string>
     <string name="pano_start">Начать панораму</string>
     <string name="pano_download">Скачать фото на телефон</string>
     <string name="pano_export">Экспортировать шаблон PTGui</string>
@@ -123,6 +125,12 @@
         <item>Тёмная</item>
         <item>Светлая</item>
         <item>Как в системе</item>
+    </string-array>
+    <string name="settings_language">Язык интерфейса</string>
+    <string-array name="settings_language_options">
+        <item>Как в системе</item>
+        <item>English</item>
+        <item>Русский</item>
     </string-array>
     <string name="settings_camera">Камера</string>
     <string name="settings_host">IP-адрес</string>

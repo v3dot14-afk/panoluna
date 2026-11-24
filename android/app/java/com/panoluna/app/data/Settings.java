@@ -50,6 +50,7 @@ public final class Settings {
     private static final String KEY_USE_MJPEG = "use_mjpeg_preview";
 
     private static final String KEY_THEME = "theme_mode";
+    private static final String KEY_LANGUAGE = "language";
 
     /** Темы. */
     public static final int THEME_DARK = 0;
@@ -304,6 +305,25 @@ public final class Settings {
      */
     public boolean darkTheme() {
         return themeMode() == THEME_DARK;
+    }
+
+    /**
+     * Язык интерфейса: 0 как в системе, 1 английский, 2 русский.
+     *
+     * Хранится отдельно от системной локали: приложение не меняет язык телефона,
+     * а подставляет свой через LocaleList, поэтому остальные приложения остаются
+     * на языке пользователя.
+     */
+    public static final int LANGUAGE_SYSTEM = 0;
+    public static final int LANGUAGE_EN = 1;
+    public static final int LANGUAGE_RU = 2;
+
+    public int languageMode() {
+        return prefs.getInt(KEY_LANGUAGE, LANGUAGE_SYSTEM);
+    }
+
+    public void setLanguageMode(int mode) {
+        prefs.edit().putInt(KEY_LANGUAGE, mode).apply();
     }
 
     public void setThemeMode(int mode) {

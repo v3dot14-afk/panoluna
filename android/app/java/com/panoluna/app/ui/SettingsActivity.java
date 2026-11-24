@@ -19,6 +19,16 @@ import com.panoluna.app.data.Settings;
  */
 public final class SettingsActivity extends Activity {
 
+    /**
+     * Язык интерфейса выбирается в настройках и подставляется здесь: строки
+     * берутся из нужного values-* ещё до создания окна, и смена языка применяется
+     * без перезапуска приложения.
+     */
+    @Override
+    protected void attachBaseContext(android.content.Context base) {
+        super.attachBaseContext(PanoLunaApp.get(base.getApplicationContext()).wrapLanguage(base));
+    }
+
     private PanoLunaApp app;
     private EditText host;
     private EditText port;
@@ -29,32 +39,19 @@ public final class SettingsActivity extends Activity {
     private EditText tiltMax;
     private EditText scale;
     private android.widget.Spinner themeSpinner;
+    private android.widget.Spinner languageSpinner;
 
-    /** Тема выбирается до создания окна: после super.onCreate смена не видна. */
-    private void applyThemeBeforeWindow() {
-        try {
-            boolean dark;
-            int mode = app.settings().themeMode();
-            if (mode == Settings.THEME_DARK) {
-                dark = true;
-            } else if (mode == Settings.THEME_LIGHT) {
-                dark = false;
-            } else {
-                dark = (getResources().getConfiguration().uiMode
-                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-            }
-            setTheme(dark ? com.panoluna.app.R.style.AppTheme
-                    : com.panoluna.app.R.style.AppTheme_Light);
-        } catch (Throwable ignored) {
-        }
-    }
+    
+
+    /** Была ли тёмная тема применена: нужно для автоматического режима. */
+    private boolean appliedDark;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         app = PanoLunaApp.get(getApplicationContext());
-        applyThemeBeforeWindow();
+        app.applyTheme(this);
         super.onCreate(savedInstanceState);
+        appliedDark = app.isDarkNow(this);
         setContentView(R.layout.activity_settings);
 
         host = findViewById(R.id.set_host);
@@ -66,6 +63,7 @@ public final class SettingsActivity extends Activity {
         tiltMax = findViewById(R.id.set_tilt_max);
         scale = findViewById(R.id.set_scale);
         themeSpinner = findViewById(R.id.set_theme_mode);
+        languageSpinner = findViewById(R.id.set_language);
 
         host.setText(app.settings().getHost());
         port.setText(String.valueOf(app.settings().getPort()));
@@ -84,6 +82,33 @@ public final class SettingsActivity extends Activity {
         themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         themeSpinner.setAdapter(themeAdapter);
         themeSpinner.setSelection(app.settings().themeMode(), false);
+        // Спиннер языка: 0 как в системе, 1 English, 2 Русский — порядок как в
+        // settings_language_options и как в Settings.LANGUAGE_*.
+        android.widget.ArrayAdapter<CharSequence> langAdapter =
+                android.widget.ArrayAdapter.createFromResource(this,
+                        R.array.settings_language_options,
+                        android.R.layout.simple_spinner_item);
+        langAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        languageSpinner.setAdapter(langAdapter);
+        languageSpinner.setSelection(app.settings().languageMode(), false);
+        languageSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view,
+                                       int position, long id) {
+                if (position == app.settings().languageMode()) {
+                    return;
+                }
+                app.settings().setLanguageMode(position);
+                // Пересоздаём окно: строки читаются в attachBaseContext, и без
+                // пересоздания они остались бы от прежней локали.
+                recreate();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+            }
+        });
+
         themeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view,
@@ -92,11 +117,8 @@ public final class SettingsActivity extends Activity {
                     return;
                 }
                 app.settings().setThemeMode(position);
-                // recreate() пересоздаёт активность с новым набором цветов: UiModeManager
-                // меняет ночной режим только к следующему созданию окна, поэтому одна
-                // смена флага без recreate() не даёт видимого эффекта (это и была
-                // причина «тема не переключается»).
-                app.applyTheme(SettingsActivity.this);
+                // Пересоздание обязательно: цвета берутся из темы в attachBaseContext
+                // и в onCreate, уже созданное окно их не перечитает.
                 recreate();
             }
 
@@ -169,6 +191,18 @@ public final class SettingsActivity extends Activity {
             return Float.parseFloat(value.trim());
         } catch (Exception e) {
             return fallback;
+        }
+    }
+
+    /**
+     * Система сменила день/ночь при открытых настройках: в автоматическом режиме
+     * перекрашиваемся сразу, не дожидаясь перезапуска.
+     */
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (app != null && app.isDarkNow(this) != appliedDark) {
+            recreate();
         }
     }
 }

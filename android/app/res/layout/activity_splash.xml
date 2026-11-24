@@ -7,7 +7,7 @@
     android:gravity="center_horizontal"
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
-    android:background="@color/background">
+    android:background="?attr/pl_background">
 
     <Space
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:src="@drawable/ic_camera"
-            android:tint="@color/accent"
+            android:tint="?attr/pl_accent"
             android:contentDescription="@null" />
 
         <TextView
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:text="@string/app_name"
-            android:textColor="@color/text"
+            android:textColor="?attr/pl_text"
             android:textSize="30sp"
             android:textStyle="bold" />
 
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="@string/splash_subtitle"
-            android:textColor="@color/text_dim"
+            android:textColor="?attr/pl_text_dim"
             android:textSize="15sp" />
 
     </LinearLayout>
@@ -55,7 +55,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="@string/splash_status_idle"
-        android:textColor="@color/text_dim"
+        android:textColor="?attr/pl_text_dim"
         android:textSize="14sp"
         android:layout_marginBottom="10dp"
         tools:ignore="HardcodedText" />
@@ -66,7 +66,7 @@
         android:layout_width="match_parent"
         android:layout_height="52dp"
         android:text="@string/splash_connect"
-        android:textColor="@color/background"
+        android:textColor="?attr/pl_background"
         android:textSize="16sp"
         android:background="@drawable/bg_button_accent"
         android:elevation="2dp" />
@@ -78,7 +78,7 @@
         android:layout_height="48dp"
         android:layout_marginTop="10dp"
         android:text="@string/splash_settings"
-        android:textColor="@color/text"
+        android:textColor="?attr/pl_text"
         android:textSize="15sp"
         android:background="@drawable/bg_button" />
 
@@ -88,7 +88,7 @@
         android:layout_marginTop="16dp"
         android:gravity="center"
         android:text="@string/splash_hint"
-        android:textColor="@color/text_dim"
+        android:textColor="?attr/pl_text_dim"
         android:textSize="12sp" />
 
     <Space

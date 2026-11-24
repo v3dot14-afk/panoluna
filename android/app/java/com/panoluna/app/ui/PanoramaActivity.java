@@ -31,6 +31,16 @@ import com.panoluna.app.proto.Ucd2;
  */
 public final class PanoramaActivity extends Activity {
 
+    /**
+     * Язык интерфейса выбирается в настройках и подставляется здесь: строки
+     * берутся из нужного values-* ещё до создания окна, и смена языка применяется
+     * без перезапуска приложения.
+     */
+    @Override
+    protected void attachBaseContext(android.content.Context base) {
+        super.attachBaseContext(PanoLunaApp.get(base.getApplicationContext()).wrapLanguage(base));
+    }
+
     private PanoLunaApp app;
     private MjpegPreview preview;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -66,6 +76,15 @@ public final class PanoramaActivity extends Activity {
 
     /** Тема, применённая к этой активити: при возвращении с измененной темой пересоздаём. */
     private int appliedThemeMode = Integer.MIN_VALUE;
+
+    /**
+     * Была ли тёмная тема применена на момент создания окна.
+     *
+     * Нужно для режима «как в системе»: система может сменить день на ночь, пока
+     * приложение в фоне, и тогда возврат на панель должен пересоздать окно с новой
+     * палитрой — одной проверки themeMode() для этого мало, режим-то не менялся.
+     */
+    private boolean appliedDark;
 
     private final PanoShooter.Listener shooterListener = new PanoShooter.Listener() {
         @Override
@@ -165,42 +184,17 @@ public final class PanoramaActivity extends Activity {
      */
     private static final long LIVE_VIEW_WAIT_MS = 20000L;
 
-    /**
-     * Выбирает тему окна до его создания.
-     *
-     * setTheme() действует только до super.onCreate: после него окно уже оформлено, и
-     * смена темы на уже созданном окне не даёт видимого эффекта. Раньше applyTheme
-     * вызывался после super.onCreate, поэтому переключение тёмной/светлой темы
-     * «не срабатывало».
-     */
-    private void applyThemeBeforeWindow() {
-        try {
-            boolean dark;
-            int mode = app.settings().themeMode();
-            if (mode == com.panoluna.app.data.Settings.THEME_DARK) {
-                dark = true;
-            } else if (mode == com.panoluna.app.data.Settings.THEME_LIGHT) {
-                dark = false;
-            } else {
-                dark = (getResources().getConfiguration().uiMode
-                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-            }
-            setTheme(dark ? com.panoluna.app.R.style.AppTheme
-                    : com.panoluna.app.R.style.AppTheme_Light);
-        } catch (Throwable ignored) {
-            // при любой ошибке остаётся тема из манифеста
-        }
-    }
+    
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Тема применяется ДО super.onCreate: окно создаётся один раз, и если сменить
         // тему после, оно остаётся с прежней — именно поэтому переключение не работало.
         app = PanoLunaApp.get(getApplicationContext());
-        applyThemeBeforeWindow();
+        app.applyTheme(this);
         super.onCreate(savedInstanceState);
         appliedThemeMode = app.settings().themeMode();
+        appliedDark = app.isDarkNow(this);
         setContentView(R.layout.activity_panorama);
         preview = new MjpegPreview();
 
@@ -226,7 +220,26 @@ public final class PanoramaActivity extends Activity {
         if (logScroll != null) {
             logScroll.setOnLongClickListener(copyLog);
         }
-        logText.setText("Долгое нажатие на этот текст — скопировать весь лог");
+        // Журнал скрыт по умолчанию — открывается кнопкой в нижней панели.
+        findViewById(R.id.btn_log).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (logScroll == null) {
+                    return;
+                }
+                boolean show = logScroll.getVisibility() != View.VISIBLE;
+                logScroll.setVisibility(show ? View.VISIBLE : View.GONE);
+                if (show) {
+                    refreshLogText();
+                    logScroll.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            logScroll.fullScroll(View.FOCUS_DOWN);
+                        }
+                    });
+                }
+            }
+        });
         startButton = findViewById(R.id.btn_start);
         pauseButton = findViewById(R.id.btn_pause);
         resumeButton = findViewById(R.id.btn_resume);
@@ -341,13 +354,26 @@ public final class PanoramaActivity extends Activity {
         applyConnection(app.isCameraConnected(), null);
     }
 
+    /**
+     * Система сменила день/ночь при открытом приложении: в режиме «как в системе»
+     * сразу перекрашиваемся, не дожидаясь перезапуска.
+     */
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (app != null && app.isDarkNow(this) != appliedDark) {
+            recreate();
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
         // Тему можно поменять в Настройках: при возвращении на эту панель активити
         // не пересоздаётся автоматически, и onCreate (где applyTheme) не вызовется.
         // Сравниваем и пересоздаём, чтобы тема применилась без перезапуска приложения.
-        if (app.settings().themeMode() != appliedThemeMode) {
+        if (app.settings().themeMode() != appliedThemeMode
+                || app.isDarkNow(this) != appliedDark) {
             recreate();
             return;
         }
@@ -497,7 +523,7 @@ public final class PanoramaActivity extends Activity {
             handler.removeCallbacks(mjpegWatchdog);
             handler.postDelayed(mjpegWatchdog, MJPEG_FIRST_FRAME_MS);
         } catch (Throwable t) {
-            previewOff.setText("Предпросмотр недоступен: " + t.getMessage());
+            previewOff.setText(getString(R.string.main_preview_off) + ": " + t.getMessage());
         }
     }
 
@@ -599,7 +625,8 @@ public final class PanoramaActivity extends Activity {
                             }
                             app.shooter().start(PanoPlan.shot24());
                         } catch (Throwable t) {
-                            Toast.makeText(PanoramaActivity.this, "Старт не удалось: " + t.getMessage(),
+                            Toast.makeText(PanoramaActivity.this,
+                                    getString(R.string.pano_start_failed) + ": " + t.getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -793,6 +820,24 @@ public final class PanoramaActivity extends Activity {
      * пользователь видит весь ход панорамы, а не только последнюю строку — по нему
      * можно понять, на каком шаге камера отказала.
      */
+    /** Собирает всю историю журнала в TextView (панель может быть скрыта). */
+    private void refreshLogText() {
+        if (logText == null) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String line : logHistory) {
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(line);
+        }
+        if (sb.length() == 0) {
+            sb.append(getString(R.string.log_hint));
+        }
+        logText.setText(sb.toString());
+    }
+
     private void log(final String message) {
         runOnUiThread(new Runnable() {
             @Override
@@ -805,22 +850,19 @@ public final class PanoramaActivity extends Activity {
                 while (logHistory.size() > LOG_HISTORY_LINES) {
                     logHistory.removeFirst();
                 }
-                StringBuilder sb = new StringBuilder();
-                for (String line : logHistory) {
-                    if (sb.length() > 0) {
-                        sb.append('\n');
+                // Скрытый журнал не перерисовываем зря: история копится всегда,
+                // а текст собирается при открытии панели. Долгое нажатие и экспорт
+                // работают и при закрытой панели.
+                if (logScroll == null || logScroll.getVisibility() != View.VISIBLE) {
+                    return;
+                }
+                refreshLogText();
+                logScroll.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        logScroll.fullScroll(android.view.View.FOCUS_DOWN);
                     }
-                    sb.append(line);
-                }
-                logText.setText(sb.toString());
-                if (logScroll != null) {
-                    logScroll.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            logScroll.fullScroll(android.view.View.FOCUS_DOWN);
-                        }
-                    });
-                }
+                });
             }
         });
     }

@@ -192,6 +192,10 @@ public final class PanoShooter {
         } else {
             log("Режим фото активирован");
         }
+        // Фокус на бесконечность: в панораме снимаем далёкие планы, и непрерывный
+        // автофокус (AF-C) «дышит» между кадрами — фокус уезжает, кадры не сшиваются.
+        // AF-S фиксирует фокус один раз до начала вращения.
+        applyFocusForPanorama();
         // Скорость гимбала — photography option 0x55 (Ripwords PROTOCOL-GAP.md). Без явной
         // записи камера остаётся с нулевой/неизвестной скоростью, и векторные команды
         // игнорируются. payload побайтово совпадает с эталоном 08551205aa050210031806.
@@ -462,6 +466,91 @@ public final class PanoShooter {
                 log("Камера разблокирована");
             }
             sleep(settings.getPanoShotDelayMs());
+        }
+    }
+
+    /**
+     * Ставит фокус, пригодный для панорамы.
+     *
+     * Зачем: камера по умолчанию работает в AF-C — непрерывно перефокусируется. Во время
+     * панорамы гимбал едет, сцена между кадрами меняется, и AF-C перестраивает фокус
+     * на каждом кадре. Кадры получаются с разной резкостью и не сшиваются.
+     *
+     * Берём AF-S: фокусировка один раз, дальше фокус заперт. Номер типа опции
+     * определяет зонд — в прошивке число к имени AF_LENS_INFO зашифровано.
+     *
+     * Метод ничего не ломает при неудаче: если тип не найден, съёмка идёт как раньше,
+     * а в журнал пишется, что именно нашлось.
+     */
+    private void applyFocusForPanorama() {
+        final Object lock = new Object();
+        final int[][] found = new int[1][];
+        camera.probeFocusOptionType(new CameraClient.Callback<int[]>() {
+            @Override
+            public void onResult(int[] value) {
+                found[0] = value;
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            }
+        });
+        synchronized (lock) {
+            try {
+                lock.wait(6_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (found[0] == null || found[0].length == 0) {
+            log("Типы опций фокуса не получены: остаётся автофокус камеры");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int t : found[0]) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            sb.append(t);
+        }
+        log("Неизвестные типы опций (среди них фокус): " + sb);
+
+        // Пробуем запереть фокус по каждому найденному типу. Лишние типы безвредны:
+        // камера на неизвестный тип отвечает пустым 200 и ничего не меняет. Какой
+        // именно тип оказался фокусом, видно по журналу.
+        for (final int type : found[0]) {
+            final Object done = new Object();
+            final boolean[] accepted = new boolean[1];
+            camera.tryLockFocus(type, new CameraClient.Callback<Boolean>() {
+                @Override
+                public void onResult(Boolean value) {
+                    accepted[0] = Boolean.TRUE.equals(value);
+                    synchronized (done) {
+                        done.notifyAll();
+                    }
+                }
+
+                @Override
+                public void onError(String message) {
+                    synchronized (done) {
+                        done.notifyAll();
+                    }
+                }
+            });
+            synchronized (done) {
+                try {
+                    done.wait(3_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            log("Фокус AF-S по типу " + type + ": " + (accepted[0] ? "принято" : "не принято"));
         }
     }
 

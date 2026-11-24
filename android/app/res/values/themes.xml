@@ -1,37 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Тёмная тема по умолчанию. Переключение тёмной/светлой темы ведётся через
-         values-night (пара цветов) и UiModeManager.setApplicationNightMode: при смене
-         ночного режима система перевыбирает значения цветов, и layout сохраняет тему. -->
+    <!--
+      ТЕМЫ. Каждая тема содержит ПОЛНУЮ палитру в собственных атрибутах pl_*.
+      Это принципиально: раньше обе темы ссылались на одни и те же @color/*,
+      а те переключались только системным ночным режимом через values-night.
+      Приложение не могло сменить их само — setApplicationNightMode есть лишь
+      с Android 12 (API 31) при minSdk 24, поэтому вызов тихо падал и светлая
+      тема не включалась.
+
+      Теперь цвета живут в теме. setTheme() до super.onCreate меняет всё
+      оформление сразу и на любой версии Android.
+    -->
+
+    <!-- Тёмная тема (по умолчанию). -->
     <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/background</item>
-        <item name="android:statusBarColor">@color/background</item>
-        <item name="android:navigationBarColor">@color/background</item>
-        <item name="android:textColorPrimary">@color/text</item>
-        <item name="android:textColorSecondary">@color/text_dim</item>
-        <item name="android:colorAccent">@color/accent</item>
-        <item name="android:colorPrimary">@color/surface</item>
-        <item name="android:colorPrimaryDark">@color/background</item>
-        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
+        <item name="pl_background">#121417</item>
+        <item name="pl_surface">#1D2024</item>
+        <item name="pl_surface_high">#2A2E33</item>
+        <item name="pl_text">#ECEFF1</item>
+        <item name="pl_text_dim">#9AA0A6</item>
+        <item name="pl_accent">#FFB300</item>
+        <item name="pl_accent_dark">#C79100</item>
+        <item name="pl_ok">#43A047</item>
+        <item name="pl_warn">#E53935</item>
+        <item name="pl_line">#3A3F45</item>
+        <item name="pl_window_light_status_bar">false</item>
+
+        <item name="android:windowBackground">?attr/pl_background</item>
+        <item name="android:statusBarColor">?attr/pl_background</item>
+        <item name="android:navigationBarColor">?attr/pl_background</item>
+        <item name="android:textColorPrimary">?attr/pl_text</item>
+        <item name="android:textColorSecondary">?attr/pl_text_dim</item>
+        <item name="android:colorAccent">?attr/pl_accent</item>
+        <item name="android:colorPrimary">?attr/pl_surface</item>
+        <item name="android:colorPrimaryDark">?attr/pl_background</item>
+        <item name="android:windowLightStatusBar">?attr/pl_window_light_status_bar</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <!-- Светлая Material-тема (используется при выборе светлой темы). -->
+    <!-- Светлая тема: своя палитра целиком, независимо от values-night. -->
     <style name="AppTheme_Light" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/background</item>
-        <item name="android:statusBarColor">@color/background</item>
-        <item name="android:navigationBarColor">@color/background</item>
-        <item name="android:textColorPrimary">@color/text</item>
-        <item name="android:textColorSecondary">@color/text_dim</item>
-        <item name="android:colorAccent">@color/accent</item>
-        <item name="android:colorPrimary">@color/surface</item>
-        <item name="android:colorPrimaryDark">@color/background</item>
-        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
+        <item name="pl_background">#F2F3F5</item>
+        <item name="pl_surface">#FFFFFF</item>
+        <item name="pl_surface_high">#E9ECEF</item>
+        <item name="pl_text">#1B1F24</item>
+        <item name="pl_text_dim">#6B7280</item>
+        <item name="pl_accent">#F59E0B</item>
+        <item name="pl_accent_dark">#B45309</item>
+        <item name="pl_ok">#16A34A</item>
+        <item name="pl_warn">#DC2626</item>
+        <item name="pl_line">#E2E5EA</item>
+        <item name="pl_window_light_status_bar">true</item>
+
+        <item name="android:windowBackground">?attr/pl_background</item>
+        <item name="android:statusBarColor">?attr/pl_background</item>
+        <item name="android:navigationBarColor">?attr/pl_background</item>
+        <item name="android:textColorPrimary">?attr/pl_text</item>
+        <item name="android:textColorSecondary">?attr/pl_text_dim</item>
+        <item name="android:colorAccent">?attr/pl_accent</item>
+        <item name="android:colorPrimary">?attr/pl_surface</item>
+        <item name="android:colorPrimaryDark">?attr/pl_background</item>
+        <item name="android:windowLightStatusBar">?attr/pl_window_light_status_bar</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <!-- Тема заставки: палитра нужна, чтобы цвета не зависели от системного режима. -->
+    <style name="AppTheme.Splash" parent="AppTheme" />
 
     <style name="AppTheme.Transparent">
         <item name="android:windowIsTranslucent">true</item>
@@ -45,7 +82,7 @@
         <item name="android:background">@drawable/bg_button</item>
         <item name="android:scaleType">centerInside</item>
         <item name="android:padding">12dp</item>
-        <item name="android:tint">@color/text</item>
+        <item name="android:tint">?attr/pl_text</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
     </style>
@@ -64,7 +101,7 @@
 
     <style name="RoundButton.Accent">
         <item name="android:background">@drawable/bg_button_accent</item>
-        <item name="android:tint">@color/background</item>
+        <item name="android:tint">?attr/pl_background</item>
     </style>
 
     <style name="BottomButton">
@@ -76,7 +113,7 @@
         <item name="android:background">@drawable/bg_button</item>
         <item name="android:scaleType">centerInside</item>
         <item name="android:padding">14dp</item>
-        <item name="android:tint">@color/text</item>
+        <item name="android:tint">?attr/pl_text</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
     </style>
@@ -92,7 +129,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:textColor">?attr/pl_text_dim</item>
         <item name="android:textSize">13sp</item>
     </style>
 
@@ -108,7 +145,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:textColor">@color/text</item>
+        <item name="android:textColor">?attr/pl_text</item>
         <item name="android:textSize">15sp</item>
     </style>
 
@@ -126,7 +163,7 @@
     <style name="GroupTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/accent</item>
+        <item name="android:textColor">?attr/pl_accent</item>
         <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.04</item>
@@ -135,7 +172,7 @@
     <style name="FieldLabelCompact">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:textColor">?attr/pl_text_dim</item>
         <item name="android:textSize">11sp</item>
         <item name="android:layout_marginTop">0dp</item>
     </style>
@@ -146,8 +183,8 @@
         <item name="android:background">@drawable/bg_field</item>
         <item name="android:paddingStart">10dp</item>
         <item name="android:paddingEnd">10dp</item>
-        <item name="android:textColor">@color/text</item>
-        <item name="android:textColorHint">@color/text_dim</item>
+        <item name="android:textColor">?attr/pl_text</item>
+        <item name="android:textColorHint">?attr/pl_text_dim</item>
         <item name="android:textSize">14sp</item>
         <item name="android:inputType">text</item>
     </style>

@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="?attr/pl_background"
     android:orientation="vertical">
 
     <FrameLayout
@@ -22,7 +22,7 @@
             android:id="@+id/preview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/surface"
+            android:background="?attr/pl_surface"
             android:contentDescription="@string/main_gimbal"
             android:scaleType="fitCenter" />
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/main_preview_off"
-            android:textColor="@color/text_dim"
+            android:textColor="?attr/pl_text_dim"
             android:textSize="14sp" />
 
         <!-- Верхняя строка состояния -->
@@ -50,7 +50,7 @@
                 android:id="@+id/status_battery"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text"
+                android:textColor="?attr/pl_text"
                 android:textSize="13sp" />
 
             <TextView
@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
-                android:textColor="@color/text"
+                android:textColor="?attr/pl_text"
                 android:textSize="13sp" />
 
             <ImageButton
@@ -87,14 +87,14 @@
                 android:layout_marginEnd="24dp"
                 android:max="100"
                 android:progress="0"
-                android:progressTint="@color/accent" />
+                android:progressTint="?attr/pl_accent" />
 
             <TextView
                 android:id="@+id/pano_counter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/text"
+                android:textColor="?attr/pl_text"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -135,35 +135,53 @@
                 android:src="@drawable/ic_stop" />
         </LinearLayout>
 
+        <!-- Журнал скрыт по умолчанию: он занимал полосу над кнопками и мешал
+             смотреть превью. Открывается кнопкой-листом в нижней панели, там же
+             долгое нажатие по-прежнему копирует/сохраняет весь лог. -->
         <ScrollView
             android:id="@+id/log_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="80dp"
-            android:maxHeight="120dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:scrollbars="vertical">
+            android:layout_marginBottom="72dp"
+            android:background="?attr/pl_surface"
+            android:maxHeight="160dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:scrollbars="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/log_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_dim"
+                android:textColor="?attr/pl_text_dim"
                 android:textSize="11sp" />
         </ScrollView>
     </FrameLayout>
 
-    <!-- Нижняя навигация: только настройки -->
+    <!-- Нижняя панель: шестерёнка настроек по центру.
+         Раньше кнопка растягивалась на всю ширину (BottomButton = weight 1),
+         из-за чего выглядела полосой, а не шестерёнкой. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <ImageButton
+            android:id="@+id/btn_log"
+            style="@style/RoundButton"
+            android:layout_marginEnd="16dp"
+            android:contentDescription="@string/main_log"
+            android:src="@drawable/ic_log" />
+
+        <ImageButton
             android:id="@+id/btn_app_settings"
-            style="@style/BottomButton"
+            style="@style/RoundButton"
+            android:layout_marginStart="16dp"
             android:contentDescription="@string/main_app_settings"
             android:src="@drawable/ic_settings" />
     </LinearLayout>

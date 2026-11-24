@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PanoLuna</string>
+
+    <!-- Экран 1: заставка и подключение по IP -->
+    <string name="splash_subtitle">Insta360 Luna Ultra</string>
+    <string name="splash_status_idle">Нажмите «Подключиться», чтобы найти камеру</string>
+    <string name="splash_status_connecting">Поиск камеры по IP и подключение…</string>
+    <string name="splash_connect">Подключиться</string>
+    <string name="splash_settings">Настройки</string>
+    <string name="splash_connect_failed">Не удалось подключиться к камере</string>
+    <string name="splash_hint">Сначала подключите телефон к Wi-Fi «Luna Ultra …» в настройках, затем нажмите «Подключиться».</string>
+
+    <!-- Экран 1: подключение по Wi-Fi ( legacy ) -->
+    <string name="connect_title">PanoLuna</string>
+    <string name="connect_subtitle">Insta360 Luna Ultra</string>
+    <string name="connect_scan">Найти Wi-Fi камеры</string>
+    <string name="connect_scanning">Поиск…</string>
+    <string name="connect_password">Пароль Wi-Fi</string>
+    <string name="connect_button">Подключиться</string>
+    <string name="connect_forget">Забыли пароль? Он удаляется в Настройках.</string>
+    <string name="connect_saved">Сеть и пароль запомнены</string>
+    <string name="connect_settings">Настройки</string>
+    <string name="connect_camera_ip">IP камеры</string>
+    <string name="connect_state_idle">Не подключено</string>
+    <string name="connect_state_scanning">Поиск камеры…</string>
+    <string name="connect_state_connecting">Подключение к %1$s…</string>
+    <string name="connect_state_joining">Присоединение к сети Wi-Fi…</string>
+    <string name="connect_state_opening">Открытие управляющей сессии…</string>
+    <string name="connect_state_connected">Подключено к %1$s</string>
+    <string name="connect_state_failed">Подключение не удалось</string>
+    <string name="connect_no_network">Сеть «Luna Ultra» не найдена. Включите камеру и попробуйте снова.</string>
+    <string name="connect_need_location">Нужен разрешение на определение местоположения, чтобы прочитать Wi-Fi камеры.</string>
+    <string name="connect_need_manual">На Android 9 и ниже подключите Wi-Fi камеры в системных настройках, затем нажмите «Подключиться».</string>
+    <string name="connect_hint">Камера создаёт сеть «Luna Ultra …». Найдите её и введите пароль.</string>
+    <string name="connect_search">Поиск Wi-Fi камеры</string>
+    <string name="connect_search_waiting">Нажмите кнопку, чтобы найти камеру</string>
+    <string name="connect_search_scanning">Сканирование…</string>
+    <string name="connect_search_found">Найдена: %1$s</string>
+    <string name="connect_search_none">Камера не найдена. Проверьте Wi-Fi и включите камеру.</string>
+    <string name="connect_search_denied">Не дано разрешение на сканирование Wi-Fi.</string>
+    <string name="connect_connect_title">Подключение</string>
+    <string name="connect_network">Сеть</string>
+    <string name="connect_password_hint">Введите пароль Wi-Fi</string>
+    <string name="connect_connect">Подключиться</string>
+    <string name="connect_state_idle2">Не выбрана</string>
+
+    <!-- Навигация по низу -->
+    <string name="nav_pano">Панорама</string>
+    <string name="nav_camera">Настройки камеры</string>
+    <string name="nav_gallery">Галерея</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Экран 2: видоискатель -->
+    <string name="main_preview_off">Предпросмотр недоступен</string>
+    <string name="main_shots">%1$d / %2$d</string>
+    <string name="main_gimbal">Гимбал</string>
+    <string name="main_pano_control">Съёмка панорамы</string>
+    <string name="main_pano_start">Старт</string>
+    <string name="main_pano_pause">Пауза</string>
+    <string name="main_pano_resume">Продолжить</string>
+    <string name="main_pano_stop">Стоп</string>
+    <string name="main_battery">Батарея %1$d%%</string>
+    <string name="main_camera_settings">Настройки камеры</string>
+    <string name="main_gallery">Галерея</string>
+    <string name="main_app_settings">Настройки приложения</string>
+    <string name="main_connect">Подключиться</string>
+    <string name="main_disconnect">Отключиться</string>
+    <string name="log_hint">Долгое нажатие по журналу — скопировать весь лог</string>
+    <string name="main_log">Журнал</string>
+
+    <!-- Управление панорамой -->
+    <string name="pano_title">Съёмка панорамы</string>
+    <string name="pano_rows">Строки</string>
+    <string name="pano_columns">Столбцы</string>
+    <string name="pano_overlap">Перекрытие %</string>
+    <string name="pano_tilt_bottom">Наклон вниз</string>
+    <string name="pano_tilt_top">Наклон вверх</string>
+    <string name="pano_delay">Пауза после кадра (мс)</string>
+    <string name="pano_total">Кадров: %1$d</string>
+    <string name="pano_start_failed">Старт не выполнен</string>
+    <string name="pano_start">Начать панораму</string>
+    <string name="pano_download">Скачать фото на телефон</string>
+    <string name="pano_export">Экспортировать шаблон PTGui</string>
+    <string name="pano_export_ok">Шаблон PTGui сохранён в %1$s</string>
+    <string name="pano_export_csv">Экспортировать таблицу углов (CSV)</string>
+    <string name="pano_export_job">Экспортировать полную работу (PTGui + Pano2VR + CSV)</string>
+    <string name="pano_export_job_ok">Работа сохранена в %1$s</string>
+    <string name="pano_plan_24">24 кадра (4×6, полная сфера)</string>
+    <string name="pano_plan_18">18 кадров (3×6)</string>
+    <string name="pano_plan_12">12 кадров (3×4)</string>
+    <string name="pano_plan_36">36 кадров (6×6)</string>
+
+    <!-- Настройки камеры -->
+    <string name="cam_title">Камера и съёмка</string>
+    <string name="cam_photo_size">Разрешение фото</string>
+    <string name="cam_zoom">Оптический зум</string>
+    <string name="cam_mode">Режим</string>
+    <string name="cam_auto">Авто</string>
+    <string name="cam_pro">Pro (ручной)</string>
+    <string name="cam_iso">ISO</string>
+    <string name="cam_shutter">Выдержка</string>
+    <string name="cam_ev">Компенсация EV</string>
+    <string name="cam_wb">Баланс белого</string>
+    <string name="cam_brightness">Яркость</string>
+    <string name="cam_raw">RAW (DNG) + JPG</string>
+    <string name="cam_apply">Применить к камере</string>
+    <string name="cam_applied">Настройки применены</string>
+    <string name="cam_gimbal_speed">Скорость гимбала</string>
+
+    <!-- Галерея -->
+    <string name="gallery_title">Галерея телефона</string>
+    <string name="gallery_empty">Нет фото. Скачайте кадры с камеры.</string>
+    <string name="gallery_delete">Удалить</string>
+    <string name="gallery_share">Поделиться</string>
+    <string name="gallery_select_all">Выбрать все</string>
+    <string name="gallery_selected">Выбрано: %1$d</string>
+
+    <!-- Настройки приложения -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_appearance">Внешний вид</string>
+    <string name="settings_theme_dark">Тема оформления</string>
+    <string name="settings_theme_desc">Тёмная, светлая или как в системе</string>
+    <string-array name="settings_theme_options">
+        <item>Тёмная</item>
+        <item>Светлая</item>
+        <item>Как в системе</item>
+    </string-array>
+    <string name="settings_language">Язык интерфейса</string>
+    <string-array name="settings_language_options">
+        <item>Как в системе</item>
+        <item>English</item>
+        <item>Русский</item>
+    </string-array>
+    <string name="settings_camera">Камера</string>
+    <string name="settings_host">IP-адрес</string>
+    <string name="settings_port">Порт</string>
+    <string name="settings_timeout">Таймаут команды (мс)</string>
+    <string name="settings_wifi">Wi-Fi камеры</string>
+    <string name="settings_wifi_forget">Удалить запомненные сеть и пароль</string>
+    <string name="settings_wifi_forget_done">Креденциалы Wi-Fi удалены</string>
+    <string name="settings_gimbal">Гимбал</string>
+    <string name="settings_pan_limits">Диапазон pan (°)</string>
+    <string name="settings_tilt_limits">Диапазон tilt (°)</string>
+    <string name="settings_angular_scale">Измеренный угловой фактор</string>
+    <string name="settings_invert_pan">Инвертировать pan</string>
+    <string name="settings_invert_tilt">Инвертировать tilt</string>
+    <string name="settings_data">Данные</string>
+    <string name="settings_clear">Очистить все данные приложения</string>
+    <string name="settings_clear_action">Очистить</string>
+    <string name="settings_clear_done">Данные приложения очищены</string>
+    <string name="settings_templates">Шаблоны</string>
+    <string name="settings_templates_info">Шаблоны PTGui и Pano2VR находятся в /templates: скопируйте их в папку шаблонов этих программ.</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_version">Версия</string>
+</resources>

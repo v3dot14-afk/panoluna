@@ -210,39 +210,68 @@ public final class PanoLunaApp extends Application {
     }
 
     /** Применяет тёмную/светлую тему из настроек. Вызывается до setContentView в активити. */
+    /**
+     * Применяет тему к активити.
+     *
+     * ВАЖНО: вызывать ДО super.onCreate(). После него окно уже создано с прежней
+     * темой, и setTheme() не даёт видимого эффекта.
+     *
+     * Здесь только выбирается нужная тема: цвета обеих тем лежат в их собственных
+     * атрибутах pl_* (см. values/themes.xml), поэтому переключение не зависит от
+     * системного ночного режима и от UiModeManager.setApplicationNightMode, который
+     * существует лишь с Android 12 при minSdk 24 — именно на этом старый код и
+     * ломался молча.
+     */
     public void applyTheme(android.app.Activity activity) {
-        try {
-            int mode = settings.themeMode();
-            int target;
-            switch (mode) {
-                case Settings.THEME_LIGHT:
-                    target = android.content.res.Configuration.UI_MODE_NIGHT_NO;
-                    break;
-                case Settings.THEME_SYSTEM:
-                    target = (activity.getResources().getConfiguration().uiMode
-                            & android.content.res.Configuration.UI_MODE_NIGHT_MASK);
-                    break;
-                default:
-                    target = android.content.res.Configuration.UI_MODE_NIGHT_YES;
-                    break;
-            }
-            android.content.res.Configuration config = activity.getResources().getConfiguration();
-            int current = config.uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
-            if (current != target) {
-                android.app.UiModeManager um = (android.app.UiModeManager)
-                        activity.getSystemService(Context.UI_MODE_SERVICE);
-                um.setApplicationNightMode(target);
-            }
-            boolean dark = settings.themeMode() == Settings.THEME_DARK
-                    || (settings.themeMode() == Settings.THEME_SYSTEM
-                    && target == android.content.res.Configuration.UI_MODE_NIGHT_YES);
-            if (activity.getTheme() != null) {
-                activity.setTheme(dark ? com.panoluna.app.R.style.AppTheme
-                        : com.panoluna.app.R.style.AppTheme_Light);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Применение темы не удалось: " + e.getMessage());
+        activity.setTheme(resolveThemeRes(activity));
+    }
+
+    /**
+     * Контекст с выбранным языком интерфейса.
+     *
+     * Приложение не меняет локаль телефона: оно подставляет свою через
+     * createConfigurationContext, поэтому остальные приложения остаются на языке
+     * пользователя, а строки PanoLuna переключаются сразу после выбора.
+     *
+     * Вызывать в attachBaseContext (активити) — до super.onCreate, иначе строки
+     * уже прочитаны из старой локали.
+     */
+    public android.content.Context wrapLanguage(android.content.Context base) {
+        int mode = settings.languageMode();
+        if (mode == Settings.LANGUAGE_SYSTEM) {
+            return base;
         }
+        java.util.Locale locale = mode == Settings.LANGUAGE_EN
+                ? java.util.Locale.ENGLISH : new java.util.Locale("ru", "RU");
+        java.util.Locale.setDefault(locale);
+        android.content.res.Configuration config =
+                new android.content.res.Configuration(base.getResources().getConfiguration());
+        if (android.os.Build.VERSION.SDK_INT >= 24) {
+            config.setLocales(new android.os.LocaleList(locale));
+        } else {
+            config.locale = locale;
+        }
+        return base.createConfigurationContext(config);
+    }
+
+    /** Ресурс темы для текущего режима: 0 тёмная, 1 светлая, 2 как в системе. */
+    public int resolveThemeRes(android.content.Context context) {
+        return isDarkNow(context) ? com.panoluna.app.R.style.AppTheme
+                : com.panoluna.app.R.style.AppTheme_Light;
+    }
+
+    /** true, если сейчас должна быть тёмная тема (с учётом «как в системе»). */
+    public boolean isDarkNow(android.content.Context context) {
+        int mode = settings.themeMode();
+        if (mode == Settings.THEME_DARK) {
+            return true;
+        }
+        if (mode == Settings.THEME_LIGHT) {
+            return false;
+        }
+        return (context.getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                == android.content.res.Configuration.UI_MODE_NIGHT_YES;
     }
 
     public static PanoLunaApp get(Context context) {
