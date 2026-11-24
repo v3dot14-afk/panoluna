@@ -4,21 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Il piano degli scatti di una panoramica sferica.
+ * План  съёмки сферической панорамы.
  *
- * Il predeterminato e' la griglia di Panoshooter: 4 file x 6 colonne = 24 scatti, con la
- * lente 1x della Luna Ultra (campo orizzontale misurato 77,7 deg, verticale ~62,3 deg in 4:3).
+ * По умолчанию — сетка Panoshooter: 4 ряда x 6 столбцов = 24 кадра, объектив 1x
+ * Luna Ultra (измеренный горизонтальный угол 77,7°, вертикальный ~62,3° в формате 4:3).
  *
- * Le file sono ordinate dal basso verso l'alto e il senso di marcia si alterna (serpentino),
- * cosi' il gimbal non riprende mai da capo: lo spostamento fra uno scatto e il successivo e'
- * sempre un passo, mai il giro intero.
+ * Ряды идут снизу вверх, направление движения чередуется (серпентина), поэтому гимбал
+ * никогда не разворачивается на 360°: переход от кадра к кадру — всегда шаг, а не полный круг.
  *
- * Gli angoli sono relativi: lo scatto 0 parte da dove guarda la camera, e il modello
- * sottrae quell'offset quando esporta il template PTGui (PTGui allinea comunque da solo).
+ * Углы относительны: кадр 0 начинается от того места, куда смотрит камера, и при экспорте
+ * шаблона PTGui этот сдвиг вычитается (в любом случае PTGui выравнивает сам).
  */
 public final class PanoPlan {
 
-    /** Un punto del piano. Gli angoli sono gradi, pan e tilt. */
+    /** Точка плана. Углы в градусах: pan (горизонт), tilt (наклон). */
     public static final class Shot {
         public final int index;
         public final int row;
@@ -47,18 +46,20 @@ public final class PanoPlan {
     private final float tiltBottom;
     private final int overlapPercent;
 
-    public PanoPlan(int rows, int columns, float tiltBottom, float tiltTop, int overlapPercent) {
+    public PanoPlan(int rows, int columns, float tiltBottom, float tiltTop) {
         this.rows = Math.max(1, Math.min(12, rows));
         this.columns = Math.max(1, Math.min(24, columns));
         this.tiltBottom = tiltBottom;
         this.tiltTop = tiltTop;
-        this.overlapPercent = Math.max(10, Math.min(60, overlapPercent));
+        // Перекрёстие вычисляется из реальной геометрии сетки и измеренного FOV, а не
+        // задаётся числом: метка всегда соответствует тем координатам, которые высылает план.
+        this.overlapPercent = computeOverlapPercent();
         build();
     }
 
-    /** Il piano a 24 scatti: 4 file x 6 colonne, tilt da -52 a +52 gradi. */
+    /** План из 24 кадров: 4 ряда x 6 столбцов, tilt от -52 до +52 градусов. */
     public static PanoPlan shot24() {
-        return new PanoPlan(4, 6, -52f, 52f, 30);
+        return new PanoPlan(4, 6, -52f, 52f);
     }
 
     private void build() {
@@ -80,6 +81,23 @@ public final class PanoPlan {
             return (start + end) / 2f;
         }
         return start + (end - start) * index / (count - 1);
+    }
+
+    /**
+     * Минимальное реальное перекрытие (%) между соседними кадрами по горизонтали и вертикали.
+     * Горизонтальный шаг = 360/столбцы; вертикальный = (tiltTop-tiltBottom)/(ряды-1).
+     * Перекрытие = 1 - шаг/FOV. Берётся минимум — это и есть наихудшее перекрытие сетки.
+     */
+    private int computeOverlapPercent() {
+        float panStep = columns == 1 ? 0f : 360f / columns;
+        float tiltSpan = tiltTop - tiltBottom;
+        float tiltStep = (rows <= 1) ? 0f : tiltSpan / (rows - 1);
+        int horizontal = (panStep > 0f && panStep < MEASURED_HFOV_DEG)
+                ? (int) Math.round((1f - panStep / MEASURED_HFOV_DEG) * 100f) : 0;
+        int vertical = (tiltStep > 0f && tiltStep < MEASURED_VFOV_DEG)
+                ? (int) Math.round((1f - tiltStep / MEASURED_VFOV_DEG) * 100f) : 0;
+        int min = Math.min(horizontal, vertical);
+        return Math.max(10, Math.min(60, min));
     }
 
     public List<Shot> shots() {
@@ -110,26 +128,26 @@ public final class PanoPlan {
         return tiltBottom;
     }
 
-    /** Passo orizzontale fra due colonne. */
+    /** Горизонтальный шаг между двумя столбцами (градусов). */
     public float getPanStep() {
         return columns == 1 ? 0f : 360f / columns;
     }
 
     /**
-     * Campo orizzontale della lente a 1x in 4:3, misurato sulla Luna Ultra contro la gravita':
-     * 77,7 gradi, non gli 81,7 dichiarati di catalogo.
+     * Горизонтальный угол поля зрения объектива 1x в формате 4:3, измерен на Luna Ultra
+     * относительно горизонта: 77,7 градуса, а не заявленные каталогом 81,7.
      */
     public static final float MEASURED_HFOV_DEG = 77.7f;
 
-    /** Campo verticale corrispondente, in 4:3. */
+    /** Соответствующий вертикальный угол поля зрения, в 4:3. */
     public static final float MEASURED_VFOV_DEG = 62.3f;
 
-    /** Focale equivalente 35 mm che produce il campo misurato, in 4:3 full frame. */
+    /** Приведённый эквивалент фокусного расстояния 35 мм, дающий измеренный угол, в 4:3 full frame. */
     public static final float EQUIVALENT_FOCAL_MM = 21.5f;
 
     /**
-     * Template PTGui: i 24 punti con yaw/pitch, la lente rettilinea e il campo misurato.
-     * Le immagini non sono incluse: PTGui applica i parametri per indice alle foto caricate.
+     * Шаблон PTGui: 24 точки с yaw/pitch, прямолинейная оптика и измеренное поле зрения.
+     * Изображения не включены: PTGui применяет параметры по индексу к загруженным фото.
      */
     public String toPtGuiTemplate(String name) {
         StringBuilder sb = new StringBuilder();
@@ -226,7 +244,7 @@ public final class PanoPlan {
                     .append(" v").append(MEASURED_HFOV_DEG)
                     .append(" a0 b0 c0 d0 e0 g0 t0\r\n");
         }
-        sb.append("\r\n# immagine demo sostituita da PTGui con la prima foto:\r\n");
+        sb.append("\r\n# демо-изображение заменяется PTGui первой загруженной фото:\r\n");
         sb.append("#-dummyimage\r\n");
         sb.append("o w1 h1 y0 r0 p0 v").append(MEASURED_HFOV_DEG)
                 .append(" a0 b0 c0 f2 d0 e0 g0 t0\r\n");
@@ -236,7 +254,7 @@ public final class PanoPlan {
         return sb.toString();
     }
 
-    /** Papywizard XML: un'alternativa che PTGui importa con File > Import Papywizard. */
+    /** XML Papywizard: альтернатива, которую PTGui импортирует через File > Import Papywizard. */
     public String toPapywizardXml() {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -252,14 +270,14 @@ public final class PanoPlan {
     }
 
     /**
-     * Progetto pano2vr pronto per l'uscita sferica.
+     * Проект pano2vr, готовый к сферическому выводу.
      *
-     * L'ingresso e' l'equirettangolare cucito da PTGui (o da PTGui a sua volta): pano2vr non
-     * allinea le singole foto, le orienta. Il file punta quindi all'output dello stitch, con
-     * nome relativo, cosi' basta mettere il .p2vr accanto alla foto cucita.
+     * Вход — сшитая PTGui равноудаленная панорама: pano2vr не выравнивает отдельные фото,
+     * а только ориентирует их. Проект указывает на результат сшивки по относительному
+     * имени, поэтому достаточно положить .p2vr рядом с сшитой фото.
      *
-     * L'output e' HTML5 con tile multirisoluzione da 512 px: e' la regola che pano2vr
-     * consiglia per le sfere, e tiene la dimensione del progetto gestibile anche a 27k.
+     * Вывод — HTML5 с мультирезолюционными плитками 512 px: это правило pano2vr для
+     * сфер и держит размер проекта в управляемых пределах даже при 27k.
      */
     public String toPano2vrProject(String inputFileName) {
         String name = inputFileName == null || inputFileName.isEmpty()
@@ -268,7 +286,7 @@ public final class PanoPlan {
         sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         sb.append("<!-- Pano2VR project file - PanoLuna, Insta360 Luna Ultra -->\n");
         sb.append("<!--\n");
-        sb.append("  Workflow: 24 кадра -> PTGui (PanoLuna_24scatti.pts) -> equirectangular 2:1\n");
+        sb.append("  Workflow: 24 кадра -> PTGui (PanoLuna_24.pts) -> equirectangular 2:1\n");
         sb.append("  Этот проект уже нацелен на equirectangular: открыть в pano2vr и\n");
         sb.append("  использовать 'Crea tutto'. Для выравнивания отдельных фото использовать\n");
         sb.append("  Papywizard XML (File > Import Papywizard в pano2vr Pro).\n");
