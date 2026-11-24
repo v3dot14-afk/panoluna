@@ -5,46 +5,45 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
     android:background="?attr/pl_background">
 
-    <Space
+    <!-- Luna Ultra перед сферической стеной из панорамных фотографий -->
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="220dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="14dp"
+        android:src="@drawable/splash_panorama"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_splash_hero"
+        android:clipToOutline="true"
+        android:contentDescription="@string/splash_hero_description" />
 
-    <!-- Бренд-блок камеры Luna Ultra -->
+    <!-- Название приложения -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:layout_marginBottom="24dp">
-
-        <ImageView
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:src="@drawable/ic_camera"
-            android:tint="?attr/pl_accent"
-            android:contentDescription="@null" />
+        android:layout_marginBottom="18dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
             android:text="@string/app_name"
             android:textColor="?attr/pl_text"
-            android:textSize="30sp"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
             android:text="@string/splash_subtitle"
             android:textColor="?attr/pl_text_dim"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 

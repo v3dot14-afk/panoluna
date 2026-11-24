@@ -4,6 +4,7 @@
 
     <!-- Screen 1: splash and IP connection -->
     <string name="splash_subtitle">Insta360 Luna Ultra</string>
+    <string name="splash_hero_description">Luna Ultra camera in front of a spherical wall of panoramic photos</string>
     <string name="splash_status_idle">Tap “Connect” to find the camera</string>
     <string name="splash_status_connecting">Looking for the camera by IP and connecting…</string>
     <string name="splash_connect">Connect</string>

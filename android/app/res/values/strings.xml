@@ -4,6 +4,7 @@
 
     <!-- Экран 1: заставка и подключение по IP -->
     <string name="splash_subtitle">Insta360 Luna Ultra</string>
+    <string name="splash_hero_description">Камера Luna Ultra на фоне сферической стены из панорамных фотографий</string>
     <string name="splash_status_idle">Нажмите «Подключиться», чтобы найти камеру</string>
     <string name="splash_status_connecting">Поиск камеры по IP и подключение…</string>
     <string name="splash_connect">Подключиться</string>
