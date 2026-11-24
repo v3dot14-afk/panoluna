@@ -84,8 +84,7 @@
     <string name="pano_export_csv">Экспортировать таблицу углов (CSV)</string>
     <string name="pano_export_job">Экспортировать полную работу (PTGui + Pano2VR + CSV)</string>
     <string name="pano_export_job_ok">Работа сохранена в %1$s</string>
-    <string name="pano_plan_32">32 кадра (4×8, полная сфера)</string>
-    <string name="pano_plan_24">24 кадра (3×8)</string>
+    <string name="pano_plan_24">24 кадра (4×6, полная сфера)</string>
     <string name="pano_plan_18">18 кадров (3×6)</string>
     <string name="pano_plan_12">12 кадров (3×4)</string>
     <string name="pano_plan_36">36 кадров (6×6)</string>

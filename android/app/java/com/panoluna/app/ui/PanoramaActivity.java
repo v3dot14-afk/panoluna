@@ -44,7 +44,7 @@ public final class PanoramaActivity extends Activity {
     private TextView logText;
     private android.widget.ScrollView logScroll;
     private final java.util.ArrayDeque<String> logHistory = new java.util.ArrayDeque<String>();
-    private static final int LOG_HISTORY_LINES = 40;
+    private static final int LOG_HISTORY_LINES = 500;
     private ImageButton startButton;
     private ImageButton pauseButton;
     private ImageButton resumeButton;
@@ -182,6 +182,21 @@ public final class PanoramaActivity extends Activity {
         progress = findViewById(R.id.pano_progress);
         logText = findViewById(R.id.log_text);
         logScroll = findViewById(R.id.log_scroll);
+
+        // Долгое нажатие на лог: копирует ВЕСЬ лог в буфер обмена и сохраняет файл.
+        // Нужно, чтобы можно было прислать лог целиком, а не пересказывать его.
+        android.view.View.OnLongClickListener copyLog = new android.view.View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(android.view.View v) {
+                exportLog();
+                return true;
+            }
+        };
+        logText.setOnLongClickListener(copyLog);
+        if (logScroll != null) {
+            logScroll.setOnLongClickListener(copyLog);
+        }
+        logText.setText("Долгое нажатие на этот текст — скопировать весь лог");
         startButton = findViewById(R.id.btn_start);
         pauseButton = findViewById(R.id.btn_pause);
         resumeButton = findViewById(R.id.btn_resume);
@@ -585,6 +600,58 @@ public final class PanoramaActivity extends Activity {
     }
 
     /**
+     * Экспорт всего лога: копирует его в буфер обмена И пишет файл в папку приложения.
+     *
+     * Файл нужен на случай, когда буфер обмена недоступен или его нельзя вставить в
+     * мессенджер: `Android/data/com.panoluna.app/files/panoluna-log.txt`. Копия в
+     * буфер — чтобы вставить прямо в чат одним движением.
+     */
+    private void exportLog() {
+        final StringBuilder sb = new StringBuilder();
+        for (String line : logHistory) {
+            sb.append(line).append('\n');
+        }
+        final String text = sb.length() == 0 ? "Лог пуст" : sb.toString();
+
+        // Копия в буфер обмена.
+        try {
+            android.content.ClipboardManager clipboard =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                clipboard.setPrimaryClip(
+                        android.content.ClipData.newPlainText("PanoLuna log", text));
+            }
+        } catch (Throwable ignored) {
+            // буфер может быть недоступен — файл всё равно запишем
+        }
+
+        // Файл в приватной папке приложения.
+        String path = null;
+        try {
+            java.io.File dir = getExternalFilesDir(null);
+            if (dir == null) {
+                dir = getFilesDir();
+            }
+            java.io.File file = new java.io.File(dir, "panoluna-log.txt");
+            java.io.FileWriter writer = new java.io.FileWriter(file, false);
+            try {
+                writer.write(text);
+            } finally {
+                writer.close();
+            }
+            path = file.getAbsolutePath();
+        } catch (Throwable t) {
+            path = null;
+        }
+
+        String report = path != null
+                ? "Лог скопирован в буфер и сохранён:\n" + path
+                : "Лог скопирован в буфер обмена";
+        Toast.makeText(this, report, Toast.LENGTH_LONG).show();
+        log("Лог экспортирован (" + logHistory.size() + " строк)");
+    }
+
+    /**
      * Пишет строку в экранный лог с историей (последние LOG_HISTORY_LINES строк):
      * пользователь видит весь ход панорамы, а не только последнюю строку — по нему
      * можно понять, на каком шаге камера отказала.
@@ -593,7 +660,11 @@ public final class PanoramaActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                logHistory.addLast(message);
+                // Метка времени нужна для разбора сбоев: по ней видно, сколько реально
+                // длилась запись и где камера зависла.
+                String stamped = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+                        .format(new java.util.Date()) + "  " + message;
+                logHistory.addLast(stamped);
                 while (logHistory.size() > LOG_HISTORY_LINES) {
                     logHistory.removeFirst();
                 }

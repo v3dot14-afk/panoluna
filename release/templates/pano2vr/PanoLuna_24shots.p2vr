@@ -10,7 +10,7 @@
   <panorama>
     <input>
       <patch/>
-      <filename>PanoLuna_32shots_equirectangular.jpg</filename>
+      <filename>PanoLuna_24shots_equirectangular.jpg</filename>
       <type>auto</type>
       <hfov>360</hfov>
     </input>
@@ -20,7 +20,7 @@
       <fov>75</fov>
     </viewingparameter>
     <userdata>
-      <title>PanoLuna PanoLuna_32shots_equirectangular.jpg</title>
+      <title>PanoLuna PanoLuna_24shots_equirectangular.jpg</title>
       <description>24 кадра Insta360 Luna Ultra, выровненные в PTGui</description>
     </userdata>
     <hotspots/>

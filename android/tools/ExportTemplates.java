@@ -22,7 +22,7 @@ public final class ExportTemplates {
         // Solo la panoramica di 24 scatti.
         PanoPlan plan = PanoPlan.shot24();
 
-        String job = "PanoLuna_32shots";
+        String job = "PanoLuna_24shots";
         write(new File(ptgui, job + ".pts"), plan.toPtGuiTemplate(job));
         write(new File(ptgui, job + ".papywizard.xml"), plan.toPapywizardXml());
         write(new File(pano2vr, job + ".p2vr"),
@@ -49,14 +49,14 @@ public final class ExportTemplates {
         sb.append("Перекрытие: ").append(plan.getOverlapPercent()).append("%\n");
         sb.append("Tilt: ").append(plan.getTiltBottom()).append(" .. ")
                 .append(plan.getTiltTop()).append(" градусов\n\n");
-        sb.append("1) PTGui: откройте проект PanoLuna_32shots.pts\n");
+        sb.append("1) PTGui: откройте проект PanoLuna_24shots.pts\n");
         sb.append("   и перетащите ").append(plan.size())
                 .append(" фотографии: углы pan/pitch уже заданы по индексу.\n");
         sb.append("   Выход: equirectangular 27654x13827 (2:1).\n\n");
         sb.append("2) Pano2VR: два пути.\n");
-        sb.append("   a) проект PanoLuna_32shots.p2vr, который указывает на equirectangular\n");
-        sb.append("      сшитую в PTGui (переименуйте в PanoLuna_32shots_equirectangular.jpg).\n");
-        sb.append("   b) Pro > File > Import Papywizard, с PanoLuna_32shots.papywizard.xml.\n");
+        sb.append("   a) проект PanoLuna_24shots.p2vr, который указывает на equirectangular\n");
+        sb.append("      сшитую в PTGui (переименуйте в PanoLuna_24shots_equirectangular.jpg).\n");
+        sb.append("   b) Pro > File > Import Papywizard, с PanoLuna_24shots.papywizard.xml.\n");
         return sb.toString();
     }
 
