@@ -17,6 +17,16 @@ Android-приложение для Insta360 Luna Ultra: управляет ка
 - Доступны настройки адреса/порта, таймаута, масштаба управления гимбалом, темы и языка
   интерфейса (русский, английский или системный).
 
+## Скриншоты
+
+**Подключение к камере · русский**
+
+![Экран подключения PanoLuna на русском языке](https://raw.githubusercontent.com/v3dot14-afk/panoluna/6cccffe/docs/screenshots/connection-ru.jpg)
+
+**Настройки · English**
+
+![Экран настроек PanoLuna на английском языке](https://raw.githubusercontent.com/v3dot14-afk/panoluna/6cccffe/docs/screenshots/settings-en.jpg)
+
 ## Структура
 
 | Путь | Назначение |
