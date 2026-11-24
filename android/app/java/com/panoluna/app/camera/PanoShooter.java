@@ -167,6 +167,15 @@ public final class PanoShooter {
         } else {
             log("Режим фото активирован");
         }
+        // Смена режима фото может ронять стрим: оригинал вызывает ensureRunningForCapture()
+        // после установки режима. Переустанавливаем стрим перед первым движением.
+        log("Проверяю live-stream перед движением");
+        camera.announceLiveView();
+        // Стрим должен реально идти, прежде чем двигать гимбал: в рабочем probe Ripwords
+        // после START ждут ~1.5 с. Камера ack'ает START на всё, но гимбал слушается только
+        // при живом стриме. Без паузы первый вектор уходит в пустоту.
+        log("Ожидание прогрева live-stream перед движением");
+        sleep(1500L);
         while (cursor < shots.size()) {
             if (stopRequested.get()) {
                 setState(State.STOPPED);
@@ -205,10 +214,9 @@ public final class PanoShooter {
                 + Math.round(shot.tilt));
         final Object lock = new Object();
         final boolean[] reached = new boolean[1];
-        // Развернуть гимбал перед движением: после остановки и перерыва на фото камера
-        // может сложить гимбал, и без повторного объявления он не пойдёт (отозвётся один
-        // раз, затем замерает). Best-effort.
-        camera.announceLiveView();
+        // НЕ объявляем live-view перед каждым движением: 118 на активном стриме сбрасывает
+        // его и гимбал замолкает (v1.16.7 — подтверждённая регрессия). Объявление делается
+        // ОДИН раз при старте стрима (enterLiveView), как в рабочем probe Ripwords.
         // Поворот гимбала по схеме: GIMBAL_CONTROL, вектор скорости к точке плана.
         long moveStart = System.currentTimeMillis();
         gimbal.driveTo(shot.pan, shot.tilt, 30_000L, camera, new Gimbal.Callback() {

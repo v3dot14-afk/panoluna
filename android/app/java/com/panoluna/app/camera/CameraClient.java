@@ -257,10 +257,13 @@ public final class CameraClient {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Объявление live-view: разворачивает камеру, best-effort.
+                // Объявление live-view. ОТПРАВЛЯЕТСЯ ОДИН РАЗ и ожидается ответ: в рабочем
+                // probe Ripwords 118 идёт как request с ожиданием, затем START — иначе
+                // гонка, и камера не успевает войти в live-view до стрима.
                 try {
-                    connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
-                            Messages.setAccessCameraFileState(5));
+                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5),
+                            settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
                     // старое firmware может не знать команду — START всё равно пойдёт
                 }
@@ -289,19 +292,18 @@ public final class CameraClient {
     }
 
     /**
-     * Разворачивает гимбал, объявив live-view: SET_ACCESS_CAMERA_FILE_STATE(LIVE_VIEW=5).
-     *
-     * С некоторого firmware камера складывает гимбал, когда он простаивает (особенно после
-     * остановки и долгого перерыва на фото), и остаётся сложенной, пока не получит это
-     * объявление. Без повторной отправки перед движением гимбал отзывается один раз,
-     * затем замерает. Best-effort, fire-and-forget.
+     * Страховка стрима перед движением: повторно посылает START_LIVE_STREAM, если стрим
+     * был остановлен. Без SET_ACCESS_CAMERA_FILE_STATE: повторный 118 на активном стриме
+     * сбрасывает live-view и гимбал замолкает (регрессия v1.16.7). 118 отправляется
+     * ОДИН раз в enterLiveView, как в рабочем probe Ripwords.
      */
     public void announceLiveView() {
         try {
-            connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
-                    Messages.setAccessCameraFileState(5));
+            connection.request(ProtoCodes.START_LIVE_STREAM,
+                    Messages.startLiveStream(),
+                    settings.getRequestTimeoutMs()).get();
         } catch (Throwable ignored) {
-            // старое firmware может не знать команду
+            // START ack не гарантирует кадр; повтор — только страховка
         }
     }
 
@@ -318,11 +320,9 @@ public final class CameraClient {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                try {
-                    connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
-                            Messages.setAccessCameraFileState(5));
-                } catch (Throwable ignored) {
-                }
+                // Только START, без 118: повторный 118 сбрасывает активный live-view и
+                // гимбал замолкает. Если стрим остановлен — START его возвращает;
+                // если идёт — остаётся безвредным (в отличие от STOP+START).
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
