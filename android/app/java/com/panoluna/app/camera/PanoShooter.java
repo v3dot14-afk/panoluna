@@ -273,35 +273,48 @@ public final class PanoShooter {
         }
         publishShot(cursor, shot.uri, shot.pan, shot.tilt);
         // Дождаться завершения записи перед движением гимбала к следующей точке.
-        final Object idleLock = new Object();
-        final boolean[] idle = new boolean[1];
-        camera.awaitCaptureIdle(settings.getPanoShotDelayMs() + 4000L,
-                new CameraClient.Callback<Boolean>() {
-                    @Override
-                    public void onResult(Boolean value) {
-                        idle[0] = value;
-                        synchronized (idleLock) {
-                            idleLock.notifyAll();
+        // Если камера зависла в SINGLE_SHOOTING (снимок фото проходит через цепочку
+        // стрима — при сломленном стриме не закрывается), awaitCaptureIdle не дождётся:
+        // перезапускаем стрим, чтобы разблокировать камеру и восстановить стрим,
+        // после которого гимбал может двигаться. Как drainCamera() в TimelapseEngine.
+        boolean captureIdle = false;
+        for (int drain = 0; drain < 2 && !captureIdle; drain++) {
+            final Object idleLock = new Object();
+            final boolean[] idle = new boolean[1];
+            camera.awaitCaptureIdle(settings.getPanoShotDelayMs() + 4000L,
+                    new CameraClient.Callback<Boolean>() {
+                        @Override
+                        public void onResult(Boolean value) {
+                            idle[0] = value;
+                            synchronized (idleLock) {
+                                idleLock.notifyAll();
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onError(String message) {
-                        idle[0] = false;
-                        synchronized (idleLock) {
-                            idleLock.notifyAll();
+                        @Override
+                        public void onError(String message) {
+                            idle[0] = false;
+                            synchronized (idleLock) {
+                                idleLock.notifyAll();
+                            }
                         }
-                    }
-                });
-        synchronized (idleLock) {
-            try {
-                idleLock.wait(settings.getPanoShotDelayMs() + 5000L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                    });
+            synchronized (idleLock) {
+                try {
+                    idleLock.wait(settings.getPanoShotDelayMs() + 5000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            captureIdle = idle[0];
+            if (!captureIdle) {
+                log("Камера занята (SINGLE_SHOOTING): перезапускаю стрим для разблокировки");
+                camera.restartLiveView();
+                sleep(1200L);
             }
         }
-        if (!idle[0]) {
-            log("Камера ещё занята: жду перед следующей точкой");
+        if (!captureIdle) {
+            log("Камера ещё занята после перезапуска стрима: жду перед следующей точкой");
         }
         sleep(settings.getPanoShotDelayMs());
     }

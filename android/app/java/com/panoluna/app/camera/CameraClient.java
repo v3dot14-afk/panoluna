@@ -306,6 +306,43 @@ public final class CameraClient {
     }
 
     /**
+     * Перезапускает стрим live view: STOP, затем START (с объявлением разворачивания).
+     *
+     * Критичен для стоп-запуска панорамы: снимок фото проходит через ту же цепочку, что
+     * держит стрим. Если после TAKE_PICTURE стрим сломлен, камера зависает в
+     * SINGLE_SHOOTING и не выходит, а гимбал двигается ТОЛЬКО при активном стриме —
+     * команды acknowledged, но гимбал не двигается (freeze). Перезапуск стрима
+     * разблокирует камеру и восстанавливает стрим для следующего движения.
+     * Как drainCamera() в TimelapseEngine оригинала.
+     */
+    public void restartLiveView() {
+        io.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connection.request(ProtoCodes.STOP_LIVE_STREAM, new byte[0],
+                            settings.getRequestTimeoutMs()).get();
+                } catch (final Exception e) {
+                    // остановка — best-effort; даже если не ответила, запускаем
+                }
+                try {
+                    connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5));
+                } catch (Throwable ignored) {
+                }
+                try {
+                    connection.request(ProtoCodes.START_LIVE_STREAM,
+                            Messages.startLiveStream(),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (final Exception e) {
+                    // START ack не означает, что стрим пошёл; команды гимбала
+                    // отправляются на каждом движении, и стрим вернётся
+                }
+            }
+        });
+    }
+
+    /**
      * Установить режим фото: photo_sub_mode.
      *
      * SINGLE (0) — обычный одиночный кадр (для 24-кадровой панорамы на компьютер).
