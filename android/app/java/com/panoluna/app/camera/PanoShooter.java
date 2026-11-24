@@ -217,6 +217,27 @@ public final class PanoShooter {
         // при живом стриме. Без паузы первый вектор уходит в пустоту.
         log("Ожидание прогрева live-stream перед движением");
         sleep(1500L);
+        // ДЕТЕРМИНИРОВАННАЯ СТАРТОВАЯ ТОЧКА.
+        // Камера не отдаёт позицию гимбала, поэтому после прошлой съёмки он стоит
+        // где остался, а план считает его за 0 — отсюда «начинает не с того места»
+        // и упор в предел с пропуском кадров. BACK_CENTER возвращает к физическому
+        // нулю firmware (действие 2, замер apatassini), от него план отсчитывается
+        // корректно. Ждём: возврат механический, ему нужно время доехать.
+        log("Возвращаю гимбал в физический ноль");
+        camera.gimbalAction(ProtoCodes.GimbalAction.BACK_CENTER,
+                new CameraClient.Callback<Boolean>() {
+                    @Override
+                    public void onResult(Boolean value) {
+                        log("Гимбал в нуле");
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        log("Ноль гимбала не подтверждён: " + message);
+                    }
+                });
+        sleep(3500L);
+        gimbal.resetPosition(0f, 0f);
         while (cursor < shots.size()) {
             if (stopRequested.get()) {
                 setState(State.STOPPED);

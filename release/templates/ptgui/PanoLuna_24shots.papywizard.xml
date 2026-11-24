@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <papywizard>
   <shoot>
-    <pict roll="0" pitch="-52.0000" yaw="0.0000"/>
-    <pict roll="0" pitch="-52.0000" yaw="60.0000"/>
-    <pict roll="0" pitch="-52.0000" yaw="120.0000"/>
-    <pict roll="0" pitch="-52.0000" yaw="180.0000"/>
-    <pict roll="0" pitch="-52.0000" yaw="240.0000"/>
-    <pict roll="0" pitch="-52.0000" yaw="300.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="300.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="240.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="180.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="120.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="60.0000"/>
-    <pict roll="0" pitch="-17.3333" yaw="0.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="0.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="60.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="120.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="180.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="240.0000"/>
-    <pict roll="0" pitch="17.3333" yaw="300.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="300.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="240.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="180.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="120.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="60.0000"/>
-    <pict roll="0" pitch="52.0000" yaw="0.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="-57.0000"/>
+    <pict roll="0" pitch="-52.0000" yaw="1.4000"/>
+    <pict roll="0" pitch="-52.0000" yaw="59.8000"/>
+    <pict roll="0" pitch="-52.0000" yaw="118.2000"/>
+    <pict roll="0" pitch="-52.0000" yaw="176.6000"/>
+    <pict roll="0" pitch="-52.0000" yaw="235.0000"/>
+    <pict roll="0" pitch="-17.3333" yaw="235.0000"/>
+    <pict roll="0" pitch="-17.3333" yaw="176.6000"/>
+    <pict roll="0" pitch="-17.3333" yaw="118.2000"/>
+    <pict roll="0" pitch="-17.3333" yaw="59.8000"/>
+    <pict roll="0" pitch="-17.3333" yaw="1.4000"/>
+    <pict roll="0" pitch="-17.3333" yaw="-57.0000"/>
+    <pict roll="0" pitch="17.3333" yaw="-57.0000"/>
+    <pict roll="0" pitch="17.3333" yaw="1.4000"/>
+    <pict roll="0" pitch="17.3333" yaw="59.8000"/>
+    <pict roll="0" pitch="17.3333" yaw="118.2000"/>
+    <pict roll="0" pitch="17.3333" yaw="176.6000"/>
+    <pict roll="0" pitch="17.3333" yaw="235.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="235.0000"/>
+    <pict roll="0" pitch="52.0000" yaw="176.6000"/>
+    <pict roll="0" pitch="52.0000" yaw="118.2000"/>
+    <pict roll="0" pitch="52.0000" yaw="59.8000"/>
+    <pict roll="0" pitch="52.0000" yaw="1.4000"/>
+    <pict roll="0" pitch="52.0000" yaw="-57.0000"/>
   </shoot>
 </papywizard>

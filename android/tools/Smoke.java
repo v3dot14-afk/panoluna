@@ -78,7 +78,9 @@ public final class Smoke {
         check(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE == 118,
                 "код SET_ACCESS_CAMERA_FILE_STATE = 118");
 
-        // 7. piano 24 scatti: 24 punti, tilt a 4 livelli, pan ogni 60 gradi
+        // 7. План 24 кадров: 24 точки, 4 уровня tilt, pan внутри ХОДА гимбала
+        // (-57..+235), а не по кругу 0..360: за 235° гимбал физически не ходит,
+        // и старый план упирался в предел на 4-м кадре.
         PanoPlan plan = PanoPlan.shot24();
         check(plan.size() == 24, "24 кадра");
         check(plan.getRows() == 4 && plan.getColumns() == 6, "4x6");
@@ -86,9 +88,21 @@ public final class Smoke {
         for (PanoPlan.Shot s : plan.shots()) tilts[s.row] = s.tilt;
         check(Math.abs(tilts[0] - (-52f)) < 0.001f && Math.abs(tilts[3] - 52f) < 0.001f,
                 "tilt -52..+52");
-        // il senso serpentino: la riga 2 riparte da 300
+        // Змейка: строка 2 идёт в обратном порядке, от верхнего предела хода.
         PanoPlan.Shot row2first = plan.shots().get(6);
-        check(Math.abs(row2first.pan - 300f) < 0.001f, "змейка строка 2 pan=300");
+        check(Math.abs(row2first.pan - PanoPlan.PAN_MAX_DEG) < 0.001f,
+                "змейка строка 2 pan=" + PanoPlan.PAN_MAX_DEG);
+        // Все точки плана обязаны лежать внутри физического хода гимбала.
+        boolean allInside = true;
+        for (PanoPlan.Shot s2 : plan.shots()) {
+            if (s2.pan < PanoPlan.PAN_MIN_DEG - 0.001f || s2.pan > PanoPlan.PAN_MAX_DEG + 0.001f) {
+                allInside = false;
+            }
+        }
+        check(allInside, "все pan внутри хода гимбала");
+        // Охват сектора с учётом FOV должен покрывать полный круг 360°.
+        check((PanoPlan.PAN_MAX_DEG - PanoPlan.PAN_MIN_DEG) + 77.7f >= 360f,
+                "охват хода + FOV покрывает 360°");
 
         // 8. PTGui: 25 linee o, dummy a posto ultimo con proiezione f2, p-line 2:1
         String pts = plan.toPtGuiTemplate("PanoLuna_24shots");

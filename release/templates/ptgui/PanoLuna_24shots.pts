@@ -89,32 +89,32 @@ p w27654 h13827 f2 v360 u20 n"JPEG g0 q95"
 m g1 i0
 
 # input images:
-o f0 y0.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y60.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y120.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y180.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y240.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y300.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y300.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y240.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y180.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y120.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y60.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y0.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y0.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y60.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y120.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y180.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y240.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y300.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y300.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y240.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y180.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y120.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y60.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
-o f0 y0.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y-57.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y1.4000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y59.8000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y118.2000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y176.6000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y235.0000 r0 p-52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y235.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y176.6000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y118.2000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y59.8000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y1.4000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y-57.0000 r0 p-17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y-57.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y1.4000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y59.8000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y118.2000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y176.6000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y235.0000 r0 p17.3333 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y235.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y176.6000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y118.2000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y59.8000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y1.4000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
+o f0 y-57.0000 r0 p52.0000 v77.7 a0 b0 c0 d0 e0 g0 t0
 
-# immagine demo sostituita da PTGui con la prima foto:
+# демо-изображение заменяется PTGui первой загруженной фото:
 #-dummyimage
 o w1 h1 y0 r0 p0 v77.7 a0 b0 c0 f2 d0 e0 g0 t0
 

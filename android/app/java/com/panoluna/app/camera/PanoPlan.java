@@ -17,6 +17,14 @@ import java.util.List;
  */
 public final class PanoPlan {
 
+    /**
+     * Физический ход гимбала Luna Ultra: -57°…+235° (292°, меньше полного круга).
+     * Замер apatassini на реальной камере: ricentraggio относителен стороне, но
+     * абсолютный диапазон именно такой.
+     */
+    public static final float PAN_MIN_DEG = -57f;
+    public static final float PAN_MAX_DEG = 235f;
+
     /** Точка плана. Углы в градусах: pan (горизонт), tilt (наклон). */
     public static final class Shot {
         public final int index;
@@ -62,18 +70,43 @@ public final class PanoPlan {
         return new PanoPlan(4, 6, -52f, 52f);
     }
 
+    /**
+     * Строит план ВНУТРИ физического хода гимбала, а не по кругу 0..360.
+     *
+     * Гимбал Luna Ultra ходит от -57° до +235° — это 292°, меньше полного круга.
+     * План вида pan = 0/60/120/180/240/300 упирается в предел на четвёртом кадре:
+     * 240° и 300° недостижимы, и панорама обрывается (наблюдалось на камере).
+     *
+     * Поэтому все кадры раскладываются внутри хода как равномерная сетка. Шаг pan
+     * не обязан быть ровно 360/столбцы: важно, чтобы сектор покрывался с перекрытием,
+     * а лишние градусы хода — это запас, а не ошибка.
+     */
     private void build() {
         shots.clear();
         int index = 0;
+        float span = PAN_MAX_DEG - PAN_MIN_DEG;
+        // Столбцы раскладываются на ВЕСЬ ход: между соседними створками gap = span/(n-1).
+        // При 6 столбцах это 292/5 = 58,4°, а полный охват = 292 + 77,7 (FOV) = 369,7°,
+        // то есть круг 360° покрывается с запасом 9,7°. Перекрытие 1-58,4/77,7 = 25%.
+        float panStep = columns <= 1 ? 0f : span / (columns - 1);
         for (int row = 0; row < rows; row++) {
             float tilt = position(tiltBottom, tiltTop, rows, row);
             boolean forward = (row % 2 == 0);
             for (int step = 0; step < columns; step++) {
                 int column = forward ? step : (columns - 1 - step);
-                float pan = 360f * column / columns;
+                // Первый столбец — на нижнем пределе хода, последний — на верхнем пределе.
+                float pan = clampPan(PAN_MIN_DEG + panStep * column);
                 shots.add(new Shot(index++, row, column, pan, tilt));
             }
         }
+    }
+
+    /** Ограничивает pan физическим ходом гимбала. */
+    private static float clampPan(float pan) {
+        if (pan < PAN_MIN_DEG) {
+            return PAN_MIN_DEG;
+        }
+        return Math.min(pan, PAN_MAX_DEG);
     }
 
     private static float position(float start, float end, int count, int index) {
