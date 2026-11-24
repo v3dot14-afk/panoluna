@@ -273,7 +273,14 @@ public final class CameraConnection {
                 if (!frame.isCommandFrame()) {
                     return;
                 }
-                CompletableFuture<Ucd2.Frame> waiter = pending.remove(frame.requestId);
+                // Нотификации (code >= 0x2000) НЕ должны забирать реплики запросов:
+                // иначе нотификация потребляет ответ TAKE_PICTURE/START_LIVE_STREAM,
+                // запрос висит до таймаута и падает — панорама выходит в ERROR на первом
+                // кадре, гимбал замер. Как исправил Ripwords в PR #15.
+                CompletableFuture<Ucd2.Frame> waiter = null;
+                if (!frame.isNotification()) {
+                    waiter = pending.remove(frame.requestId);
+                }
                 if (waiter != null) {
                     waiter.complete(frame);
                     return;
