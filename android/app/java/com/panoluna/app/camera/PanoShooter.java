@@ -194,10 +194,14 @@ public final class PanoShooter {
         } else {
             log("Режим фото активирован");
         }
-        // Фокус на бесконечность: в панораме снимаем далёкие планы, и непрерывный
-        // автофокус (AF-C) «дышит» между кадрами — фокус уезжает, кадры не сшиваются.
-        // AF-S фиксирует фокус один раз до начала вращения.
-        applyFocusForPanorama();
+        // ФОКУС. Режим AF-S поставить нельзя: числа к именам AF_LENS_INFO /
+        // AUTO_FOCUS_MODE в прошивке зашифрованы (AppShield), а перебор вслепую
+        // вредит — проверено на аппарате: на любой номер камера отвечает 200, и
+        // «успех» на 128 типах означает, что ответ пустой, а не что режим применён.
+        // Поэтому фокус оставлен камере, а кадры снимаются с паузой на успокоение
+        // гимбала: за 2.5 минуты съёмки AF-C успевает перестроиться между кадрами
+        // по-разному. Практический выход — снимать сцену без близких предметов в
+        // кадре либо снимать в ручном фокусе, если он включается на самой камере.
         // Скорость гимбала — photography option 0x55 (Ripwords PROTOCOL-GAP.md). Без явной
         // записи камера остаётся с нулевой/неизвестной скоростью, и векторные команды
         // игнорируются. payload побайтово совпадает с эталоном 08551205aa050210031806.
@@ -325,7 +329,14 @@ public final class PanoShooter {
                 positioned = true;
             }
             // Дождаться записи ПЕРЕД следующим снимком (а не перед движением).
-            awaitWrite(positioned);
+            // После последнего кадра достаточно короткой проверки: полное ожидание
+            // «камера свободна» давало лишние 5 секунд в конце, а файл камера
+            // допишет и без нас — сессия закрывается только после ответа на снимок.
+            if (cursor < shots.size()) {
+                awaitWrite(positioned);
+            } else {
+                awaitWriteTail();
+            }
         }
         if (stopRequested.get()) {
             setState(State.STOPPED);
@@ -407,7 +418,10 @@ public final class PanoShooter {
         } else {
             log("Гимбал НЕ достиг точки " + shot.label() + " за " + moveMs + " мс: фото всё равно");
         }
-        // Гимбал должен быть неподвижен в момент съёмки: даём короткий интервал успокоения.
+        // Гимбал должен быть неподвижен в момент съёмки. Эта пауза НЕ замедляет
+        // панораму: движение с успокоением (1.3 + 0.35 с) целиком укладывается внутрь
+        // окна записи (4-5 с), которое всё равно приходится ждать. Сокращать её
+        // бессмысленно, а смаз от недожатого гимбала — реален.
         sleep(350L);
     }
 
@@ -490,6 +504,23 @@ public final class PanoShooter {
      * @param moved гимбал уже поехал — тогда в журнал пишется, что запись и движение
      *              шли одновременно; иначе сообщение прежнее.
      */
+    /**
+     * Короткая проверка после последнего кадра.
+     *
+     * Полное ожидание «камера свободна» здесь бесполезно: снимок уже принят, файл
+     * допишется сам, а лишние 5 секунд висят в конце панорамы. Но и уходить сразу
+     * нельзя: если камера ещё в цикле съёмки, следующий запуск начнётся на занятой
+     * камере. Поэтому даём 1.5 с и проверяем один раз.
+     */
+    private void awaitWriteTail() {
+        sleep(1500L);
+        if (camera.isCaptureStuck()) {
+            log("Камера ещё пишет последний кадр: файл допишется сам");
+        } else {
+            log("Камера свободна: последний кадр записан");
+        }
+    }
+
     private void awaitWrite(boolean moved) {
         // Камере нужно время записать файл. Без паузы опрос статуса начинается в момент
         // записи и добавляет камере работы — она не справляется и рвёт сессию.
@@ -538,92 +569,6 @@ public final class PanoShooter {
         }
     }
 
-    /**
-     * Ставит фокус, пригодный для панорамы.
-     *
-     * Зачем: камера по умолчанию работает в AF-C — непрерывно перефокусируется. Во время
-     * панорамы гимбал едет, сцена между кадрами меняется, и AF-C перестраивает фокус
-     * на каждом кадре. Кадры получаются с разной резкостью и не сшиваются.
-     *
-     * Берём AF-S: фокусировка один раз, дальше фокус заперт. Номер типа опции
-     * определяет зонд — в прошивке число к имени AF_LENS_INFO зашифровано.
-     *
-     * Метод ничего не ломает при неудаче: если тип не найден, съёмка идёт как раньше,
-     * а в журнал пишется, что именно нашлось.
-     */
-    private void applyFocusForPanorama() {
-        final Object lock = new Object();
-        final int[][] found = new int[1][];
-        camera.probeFocusOptionType(new CameraClient.Callback<int[]>() {
-            @Override
-            public void onResult(int[] value) {
-                found[0] = value;
-                synchronized (lock) {
-                    lock.notifyAll();
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                synchronized (lock) {
-                    lock.notifyAll();
-                }
-            }
-        });
-        synchronized (lock) {
-            try {
-                // Зонд ограничен шестью секундами внутри, плюс запас на сеть.
-                lock.wait(9_000L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        if (found[0] == null || found[0].length == 0) {
-            log("Типы опций фокуса не получены: остаётся автофокус камеры");
-            return;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int t : found[0]) {
-            if (sb.length() > 0) {
-                sb.append(", ");
-            }
-            sb.append(t);
-        }
-        log("Неизвестные типы опций (среди них фокус): " + sb);
-
-        // Пробуем запереть фокус по каждому найденному типу. Лишние типы безвредны:
-        // камера на неизвестный тип отвечает пустым 200 и ничего не меняет. Какой
-        // именно тип оказался фокусом, видно по журналу.
-        for (final int type : found[0]) {
-            final Object done = new Object();
-            final boolean[] accepted = new boolean[1];
-            camera.tryLockFocus(type, new CameraClient.Callback<Boolean>() {
-                @Override
-                public void onResult(Boolean value) {
-                    accepted[0] = Boolean.TRUE.equals(value);
-                    synchronized (done) {
-                        done.notifyAll();
-                    }
-                }
-
-                @Override
-                public void onError(String message) {
-                    synchronized (done) {
-                        done.notifyAll();
-                    }
-                }
-            });
-            synchronized (done) {
-                try {
-                    done.wait(3_000L);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            log("Фокус AF-S по типу " + type + ": " + (accepted[0] ? "принято" : "не принято"));
-        }
-    }
-
     /** Установить режим фото (photo_sub_mode = SINGLE) и дождатьсяConfirmation, с таймаутом. */
     private boolean enterSingleMode() {
         final Object lock = new Object();
@@ -652,9 +597,7 @@ public final class PanoShooter {
                 Thread.currentThread().interrupt();
             }
         }
-        if (ok[0]) {
-            log("Режим фото активирован");
-        }
+        // Сообщение печатает вызывающий: здесь дубль давал две одинаковые строки.
         return ok[0];
     }
 

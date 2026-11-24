@@ -100,17 +100,6 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /**
-     * Режим автофокуса.
-     *
-     * Номер типа опции задаётся снаружи: он определяется зондом на аппарате
-     * (CameraClient.probeFocusOptionType), потому что в прошивке число к имени
-     * AF_LENS_INFO не сохранилось.
-     */
-    public static byte[] setFocusMode(int optionType, int focusMode, int functionMode) {
-        return setPhotographyOption(optionType, optionType, focusMode, functionMode);
-    }
-
     /** Cambiare la risoluzione foto: PHOTO_SIZE_ID con l'enum PhotoSize. */
     public static byte[] setPhotoSize(int photoSizeCode, int functionMode) {
         return setPhotographyOption(
@@ -189,19 +178,6 @@ public final class Messages {
                 ProtoCodes.PhotographyOptionsField.RAW_CAPTURE_TYPE,
                 rawType,
                 functionMode);
-    }
-
-    /**
-     * Запрос списка РЕАЛЬНО существующих типов опций: пустой запрос без типов.
-     *
-     * Камера отвечает тем, что у неё есть на самом деле. Это и есть безопасный
-     * способ узнать номер фокуса: GET только читает и ничего не меняет, а имя
-     * AF_LENS_INFO в прошивке есть, число к нему — нет.
-     */
-    public static byte[] getAllPhotographyOptionTypes(int functionMode) {
-        Proto.Writer w = new Proto.Writer();
-        w.int32(2, functionMode);
-        return w.toByteArray();
     }
 
     /** GetPhotographyOptions { repeated PhotographyOptionType option_types = 1; FunctionMode = 2 } */
