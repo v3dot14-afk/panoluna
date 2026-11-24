@@ -1,6 +1,6 @@
 package com.panoluna.app;
 
-/** Generata a mano: il compilatore di riferimento non la produce senza Gradle. */
+/** Создан вручную: используемый компилятор не генерирует этот класс без Gradle. */
 public final class BuildConfig {
     public static final boolean DEBUG = false;
     public static final String APPLICATION_ID = "com.panoluna.app";

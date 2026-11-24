@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Codifica/decodifica protobuf sul filo, senza generare classi dai .proto.
+ * Кодирует и декодирует protobuf без генерации классов из файлов .proto.
  *
- * La camera Insta360 Luna Ultra parla protobuf (namespace {@code insta360.messages}) dentro i
- * frame UCD2. Serve poco: scrivere i campi dei comandi e leggere quelli delle risposte, per
- * numero di campo e tipo. Il decoder e' tollerante: si ferma al primo byte non valido invece
- * di lanciare, cosi' un payload sconosciuto resta ispezionabile.
+ * Камера Insta360 Luna Ultra передаёт protobuf (пространство имён {@code insta360.messages})
+ * внутри кадров UCD2. Реализованы только необходимые операции: запись полей команд и чтение полей ответов по
+ * номеру и типу. Декодер устойчив к ошибкам: при первом недопустимом байте он останавливается,
+ * а не выбрасывает исключение, поэтому неизвестные данные можно исследовать.
  *
- * I numeri dei campi non sono inventati: provengono dall'estrazione pubblica dei .proto del
- * progetto RigacciOrg/insta360-wifi-api e dal lavoro di Persoft su Insta360luna.
+ * Номера полей взяты из общедоступных файлов .proto проекта
+ * RigacciOrg/insta360-wifi-api и из исследования Persoft для Insta360luna.
  */
 public final class Proto {
 
@@ -26,7 +26,7 @@ public final class Proto {
     private Proto() {
     }
 
-    /** Un campo decodificato, senza schema: numero, tipo e valore grezzo. */
+    /** Декодированное поле без схемы: номер, тип и исходное значение. */
     public static final class Field {
         public final int number;
         public final int wireType;
@@ -60,7 +60,7 @@ public final class Proto {
             return (int) varint;
         }
 
-        /** Interpretazione zig-zag, per i campi dichiarati {@code sint32}. */
+        /** Декодирует zig-zag для полей, объявленных как {@code sint32}. */
         public int asSInt() {
             return (int) ((varint >>> 1) ^ -(varint & 1L));
         }
@@ -74,7 +74,7 @@ public final class Proto {
         }
     }
 
-    /** Scrittore di messaggi protobuf. */
+    /** Средство записи protobuf-сообщений. */
     public static final class Writer {
         private final ByteArrayOutputStream out = new ByteArrayOutputStream(64);
 
@@ -94,7 +94,7 @@ public final class Proto {
             return int32(field, value ? 1 : 0);
         }
 
-        /** {@code sint32}: zig-zag, indispensabile per gli angoli negativi di pan/tilt. */
+        /** {@code sint32}: кодирование zig-zag, необходимое для отрицательных углов pan/tilt. */
         public Writer sint32(int field, int value) {
             long zigzag = ((value << 1) ^ (value >> 31)) & 0xFFFFFFFFL;
             return int64(field, zigzag);
@@ -129,7 +129,7 @@ public final class Proto {
             return bytes(field, value.getBytes(Charset.forName("UTF-8")));
         }
 
-        /** Messaggio annidato: scrive un blocco prodotto da un altro Writer. */
+        /** Вложенное сообщение: записывает блок, сформированный другим Writer. */
         public Writer message(int field, byte[] nested) {
             return bytes(field, nested);
         }
@@ -159,7 +159,7 @@ public final class Proto {
         }
     }
 
-    /** Lettore di messaggi protobuf. */
+    /** Средство чтения protobuf-сообщений. */
     public static final class Reader {
         private final byte[] buffer;
 
@@ -229,7 +229,7 @@ public final class Proto {
             return result;
         }
 
-        /** Cerca un campo per numero, opzionalmente dentro un messaggio annidato ({@code path}). */
+        /** Ищет поле по номеру, при необходимости — внутри вложенного сообщения ({@code path}). */
         public Field find(int... path) {
             if (path == null || path.length == 0) {
                 return null;
@@ -334,7 +334,7 @@ public final class Proto {
             return f.asString();
         }
 
-        /** Primo campo con questo numero, a qualunque livello di annidamento (ricerca in ampiezza). */
+        /** Находит первое поле с этим номером на любом уровне вложенности (поиск в ширину). */
         public Field findShallow(int number) {
             for (Field f : fields()) {
                 if (f.number == number) {

@@ -12,7 +12,7 @@
     <string name="splash_connect_failed">Не удалось подключиться к камере</string>
     <string name="splash_hint">Сначала подключите телефон к Wi-Fi «Luna Ultra …» в настройках, затем нажмите «Подключиться».</string>
 
-    <!-- Экран 1: подключение по Wi-Fi ( legacy ) -->
+    <!-- Экран 1: подключение по Wi-Fi (устаревший экран) -->
     <string name="connect_title">PanoLuna</string>
     <string name="connect_subtitle">Insta360 Luna Ultra</string>
     <string name="connect_scan">Найти Wi-Fi камеры</string>

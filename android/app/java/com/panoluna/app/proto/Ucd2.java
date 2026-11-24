@@ -5,30 +5,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Framing UCD2, il protocollo di controllo della Insta360 Luna Ultra su TCP/6666.
+ * Формат кадров UCD2 — управляющий протокол Insta360 Luna Ultra поверх TCP/6666.
  *
  * <pre>
- *  0   4   'U' 'C' 'D' '2'      magic
+ *  0   4   'U' 'C' 'D' '2'      сигнатура
  *  4   1   0x01                 versione
- *  5   1   0x0c                 flag
- *  6   1   tipo                 0x01 media, 0x04 comando/risposta, 0x05 stream
- *  7   1   seq                  contatore a 8 bit, non correlato alle risposti
- *  8   4   len (LE)             lunghezza del corpo
- * 12   len corpo
- *      4   trailer (LE)         checksum del frame (magic..corpo compreso)
+ *  5   1   0x0c                 флаги
+ *  6   1   тип                  0x01 медиа, 0x04 команда/ответ, 0x05 поток
+ *  7   1   seq                  8-битный счётчик, не связанный с ответами
+ *  8   4   len (LE)             длина тела
+ * 12   len байт тела
+ *      4   trailer (LE)         контрольная сумма кадра (от сигнатуры до тела включительно)
  * </pre>
  *
- * Nei frame di comando il corpo si apre con 9 byte:
+ * В командных кадрах тело начинается с 9-байтового заголовка:
  * <pre>
- *  0   2   code (LE)            codice messaggio
- *  2   1   direzione            0x02 richiesta, 0x03 risposta
- *  3   2   requestId (LE)       e' questo che correla richiesta e risposta, non il seq
- *  5   4   0x00008000 (LE)      costante
- *  9   ..  messaggio protobuf
+ *  0   2   code (LE)            код сообщения
+ *  2   1   направление         0x02 запрос, 0x03 ответ
+ *  3   2   requestId (LE)       связывает запрос и ответ, а не seq
+ *  5   4   0x00008000 (LE)      постоянное значение
+ *  9   ..  сообщение protobuf
  * </pre>
  *
- * La sessione non si apre con un comando: si autorizza inviando un frame di tipo stream a
- * lunghezza zero con il token costante f6 cc 4f 09, ripetuto ogni 3 secondi come keep-alive.
+ * Сеанс открывается не командой, а разрешается отправкой потокового кадра нулевой длины
+ * с постоянным токеном f6 cc 4f 09; он повторяется каждые 3 секунды для поддержания связи.
  */
 public final class Ucd2 {
 
@@ -49,7 +49,7 @@ public final class Ucd2 {
     public static final int COMMAND_CONSTANT = 0x8000;
     public static final int MAX_DECLARED = 8 * 1024 * 1024;
 
-    /** Token del frame di handshake: occupa la posizione del trailer a lunghezza zero. */
+    /** Токен установочного кадра: занимает место контрольной суммы при нулевой длине тела. */
     public static final byte[] HELLO_TOKEN = new byte[]{(byte) 0xf6, (byte) 0xcc, 0x4f, 0x09};
 
     private static final int[] CRC_TABLE = new int[256];
@@ -70,10 +70,10 @@ public final class Ucd2 {
     }
 
     /**
-     * Checksum dei frame UCD2: variante non standard di CRC-32 (polinomio 0x04C11DB7) in cui
-     * ogni byte viene messo in XOR con il byte BASSO e seguito da quattro round di tabella sul
-     * byte alto. Non "correggerla" per farla combaciare con un CRC-32 standard: la camera
-     * scarta i frame il cui trailer non corrisponde.
+     * Контрольная сумма кадров UCD2: нестандартный вариант CRC-32 (полином 0x04C11DB7),
+     * где каждый байт складывается по XOR с младшим байтом, после чего выполняются четыре
+     * табличных шага по старшему байту. Не заменять алгоритм стандартным CRC-32: камера
+     * отбрасывает кадры с несовпадающим значением trailer.
      */
     public static int checksum(byte[] data, int from, int until) {
         int checksum = -1;
@@ -86,7 +86,7 @@ public final class Ucd2 {
         return checksum;
     }
 
-    /** Frame generico: header + lunghezza + corpo + checksum. */
+    /** Обычный кадр: заголовок + длина + тело + контрольная сумма. */
     public static byte[] frame(int type, int sequence, byte[] body) {
         byte[] out = new byte[HEADER_SIZE + LENGTH_SIZE + body.length + TRAILER_SIZE];
         System.arraycopy(MAGIC, 0, out, 0, 4);
@@ -101,7 +101,7 @@ public final class Ucd2 {
         return out;
     }
 
-    /** Frame di handshake/keep-alive: lunghezza zero e token costante al posto del checksum. */
+    /** Установочный кадр/поддержание связи: нулевая длина и постоянный токен вместо контрольной суммы. */
     public static byte[] hello(int sequence) {
         byte[] out = new byte[HEADER_SIZE + LENGTH_SIZE + TRAILER_SIZE];
         System.arraycopy(MAGIC, 0, out, 0, 4);
@@ -114,7 +114,7 @@ public final class Ucd2 {
         return out;
     }
 
-    /** Frame di comando: intestazione a 9 byte + messaggio protobuf. */
+    /** Кадр команды: 9-байтовый заголовок + сообщение protobuf. */
     public static byte[] command(int sequence, int code, int requestId, byte[] body) {
         byte[] raw = new byte[COMMAND_HEADER_SIZE + body.length];
         putShortLe(raw, 0, code);
@@ -148,7 +148,7 @@ public final class Ucd2 {
         return (src[offset] & 0xFF) | ((src[offset + 1] & 0xFF) << 8);
     }
 
-    /** Un frame UCD2 decodificato. */
+    /** Декодированный кадр UCD2. */
     public static final class Frame {
         public final int type;
         public final int code;
@@ -175,7 +175,7 @@ public final class Ucd2 {
         }
     }
 
-    /** Estrae i frame completi da un flusso di byte, riagganciandosi al magic dopo byte spuri. */
+    /** Извлекает полные кадры из потока байтов и повторно ищет сигнатуру после посторонних данных. */
     public static final class FrameAssembler {
         private byte[] buffer = new byte[16 * 1024];
         private int size = 0;
@@ -280,7 +280,7 @@ public final class Ucd2 {
         }
     }
 
-    /** Buffer circolare minimo per leggere dal socket. */
+    /** Минимальный кольцевой буфер для чтения из сокета. */
     public static final class BytePipe {
         private final ByteArrayOutputStream out = new ByteArrayOutputStream(64 * 1024);
 

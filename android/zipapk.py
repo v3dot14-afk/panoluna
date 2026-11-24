@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Minimal zip writer with zipalign-style alignment, used to package the APK.
+"""Минимальный архиватор ZIP с выравниванием по типу zipalign для упаковки APK.
 
-Android requires resources.arsc to be stored uncompressed and 4-byte aligned
-(the framework mmaps it).  Rather than shipping an external zipalign binary we
-write the archive ourselves: every stored (uncompressed) entry is padded with a
-zip "extra field" so that its data starts on a 4 byte boundary, and native
-libraries are page aligned when requested.
+Android требует хранить resources.arsc без сжатия и выравнивать начало данных по границе 4 байт
+(система отображает файл в память). Вместо включения внешнего zipalign скрипт формирует архив
+самостоятельно: перед каждым несжатым элементом добавляется
+дополнительное поле ZIP, чтобы данные начинались на границе 4 байт; нативные
+библиотеки при необходимости выравниваются по размеру страницы памяти.
 """
 import struct
 import sys
@@ -14,8 +14,8 @@ import zlib
 
 def _local_header(name, crc, csize, usize, method, align, mtime, abs_offset):
     name_b = name.encode("utf-8")
-    # Padding lives in the extra field and must bring the *data* offset
-    # (abs_offset + 30 + name + extra) onto the alignment boundary.
+    # Заполнение хранится в дополнительном поле и должно выровнять смещение начала данных
+    # (abs_offset + 30 + name + extra) по требуемой границе.
     base = abs_offset + 30 + len(name_b)
     pad = (-base) % align
     extra = b"\x00" * pad
@@ -23,11 +23,11 @@ def _local_header(name, crc, csize, usize, method, align, mtime, abs_offset):
     hdr = struct.pack(
         "<IHHHHHIIIHH",
         0x04034B50,
-        20,          # version needed
+        20,          # требуемая версия формата
         flags,
         method,
-        mtime,       # dos time
-        0x21,        # dos date (1980-01-01)
+        mtime,       # время в формате DOS
+        0x21,        # дата в формате DOS (1980-01-01)
         crc,
         csize,
         usize,
@@ -38,7 +38,7 @@ def _local_header(name, crc, csize, usize, method, align, mtime, abs_offset):
 
 
 def build(entries, out_path, page_align_so=False):
-    """entries: list of (name, data, compress_type).  compress_type 0 = stored."""
+    """entries: список (имя, данные, тип сжатия). compress_type 0 означает хранение без сжатия."""
     out = bytearray()
     central = bytearray()
     for name, data, method in entries:
@@ -96,7 +96,7 @@ def build(entries, out_path, page_align_so=False):
 
 
 def read_zip(path):
-    """Return list of (name, data, compress_type) preserving order."""
+    """Возвращает упорядоченный список (имя, данные, тип сжатия)."""
     import zipfile
     out = []
     with zipfile.ZipFile(path) as zf:
@@ -106,7 +106,7 @@ def read_zip(path):
 
 
 if __name__ == "__main__":
-    # usage: zipapk.py out.apk in1.apk [in2.apk ...]  (later files override)
+    # Использование: zipapk.py out.apk in1.apk [in2.apk ...] (последующие файлы заменяют предыдущие).
     dest = sys.argv[1]
     merged = {}
     order = []

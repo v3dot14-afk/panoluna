@@ -19,7 +19,7 @@ public final class Gimbal {
      * Самая быстрая команда гимбала — НЕ 100, а 90.
      *
      * Измерено на Luna Ultra (apatassini, GimbalCalibration.kt): команда 100 даёт ~11 °/с,
-     * а 90 — 57 °/с по горизонтали и 41 °/с по вертикали. 100 firmware обрабатывает
+     * а 90 — 57 °/с по горизонтали и 41 °/с по вертикали. прошивка обрабатывает значение 100
      * по-своему, и просить «на максимум», отправляя 100, значит ехать ВЧЕТВЕРО медленнее.
      * Отсюда и 39 секунд на первый кадр вместо ~1 секунды.
      */
@@ -50,7 +50,7 @@ public final class Gimbal {
         this.settings = settings;
     }
 
-    /** Zero del gimbal: dove guarda la camera al momento del primo comando. */
+    /** Нулевая точка гимбала — направление камеры при первой команде. */
     public void resetPosition(float pan, float tilt) {
         synchronized (lock) {
             estimatedPan = pan;
@@ -121,7 +121,7 @@ public final class Gimbal {
         client.gimbalStop();
     }
 
-    /** Integra la posizione stimata col tempo trascorso. Da chiamare di tanto in tanto. */
+    /** Обновляет оценку положения с учётом прошедшего времени. Вызывать периодически. */
     public void tick() {
         synchronized (lock) {
             integrateLocked();
@@ -159,11 +159,13 @@ public final class Gimbal {
     }
 
     /**
-     * Porta il gimbal a un angolo, a stima. Bloccante: va chiamato da un thread di lavoro.
+     * Перемещает гимбал к заданному углу по оценке положения. Метод блокирующий: вызывать
+     * его следует из рабочего потока.
      *
-     * Il controllo e' proporzionale sul resto: piu' si e' vicini, piu' piano si va, cosi' non
-     * si supera il bersaglio. Se la camera rifiuta (fine corsa, temperatura) il timeout
-     * consegna comunque, e lo scatto avviene: meglio una foto mossa che una panoramica ferma.
+     * Управление пропорциональное оставшемуся расстоянию: чем ближе цель, тем ниже скорость,
+     * чтобы не проскочить её. Если камера отклоняет команду (упор или перегрев), по таймауту
+     * управление всё равно продолжается и выполняется снимок: лучше смазанный кадр, чем
+     * остановленная панорама.
      */
     public void driveTo(float targetPan, float targetTilt, long timeoutMs, CameraClient client,
                         Callback callback) {
@@ -185,7 +187,7 @@ public final class Gimbal {
             float panCommand = clamp(panDelta / 25f, -FASTEST_SPEED, FASTEST_SPEED);
             float tiltCommand = clamp(tiltDelta / 25f, -FASTEST_SPEED, FASTEST_SPEED);
             if (Math.abs(panCommand) < 0.08f && Math.abs(tiltCommand) < 0.08f) {
-                // Sotto questa soglia il motore non parte: si forza un minimo.
+                // Ниже этого порога двигатель не запускается, поэтому задаётся минимальная скорость.
                 panCommand = panCommand == 0f ? 0f : (panCommand > 0f ? 0.08f : -0.08f);
                 tiltCommand = tiltCommand == 0f ? 0f : (tiltCommand > 0f ? 0.08f : -0.08f);
             }

@@ -10,7 +10,7 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Прямой эфир по TCP-потоку (декодирование MediaCodec), fallback для OSC-MJPEG.
+        <!-- Прямой эфир по TCP-потоку (декодирование MediaCodec), резервный канал при недоступности OSC-MJPEG.
              Нижняя вёрстка: UI-элементы (статус, прогресс, кнопки) лежат поверх. -->
         <SurfaceView
             android:id="@+id/preview_surface"

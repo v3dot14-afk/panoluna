@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">PanoLuna</string>
 
-    <!-- Screen 1: splash and IP connection -->
+    <!-- Экран 1: заставка и подключение по IP -->
     <string name="splash_subtitle">Insta360 Luna Ultra</string>
     <string name="splash_hero_description">Luna Ultra camera in front of a spherical wall of panoramic photos</string>
     <string name="splash_status_idle">Tap “Connect” to find the camera</string>
@@ -12,7 +12,7 @@
     <string name="splash_connect_failed">Could not connect to the camera</string>
     <string name="splash_hint">First connect your phone to the “Luna Ultra …” Wi-Fi in system settings, then tap “Connect”.</string>
 
-    <!-- Screen 1: Wi-Fi connection (legacy) -->
+    <!-- Экран 1: подключение по Wi-Fi (устаревший экран) -->
     <string name="connect_title">PanoLuna</string>
     <string name="connect_subtitle">Insta360 Luna Ultra</string>
     <string name="connect_scan">Find camera Wi-Fi</string>
@@ -46,13 +46,13 @@
     <string name="connect_connect">Connect</string>
     <string name="connect_state_idle2">Not selected</string>
 
-    <!-- Bottom navigation -->
+    <!-- Нижняя навигация -->
     <string name="nav_pano">Panorama</string>
     <string name="nav_camera">Camera settings</string>
     <string name="nav_gallery">Gallery</string>
     <string name="nav_settings">Settings</string>
 
-    <!-- Screen 2: viewfinder -->
+    <!-- Экран 2: видоискатель -->
     <string name="main_preview_off">Preview unavailable</string>
     <string name="main_shots">%1$d / %2$d</string>
     <string name="main_gimbal">Gimbal</string>
@@ -70,7 +70,7 @@
     <string name="log_hint">Long-press the log to copy the whole log</string>
     <string name="main_log">Log</string>
 
-    <!-- Panorama control -->
+    <!-- Управление панорамой -->
     <string name="pano_title">Panorama capture</string>
     <string name="pano_rows">Rows</string>
     <string name="pano_columns">Columns</string>
@@ -92,7 +92,7 @@
     <string name="pano_plan_12">12 frames (3×4)</string>
     <string name="pano_plan_36">36 frames (6×6)</string>
 
-    <!-- Camera settings -->
+    <!-- Настройки камеры -->
     <string name="cam_title">Camera and capture</string>
     <string name="cam_photo_size">Photo resolution</string>
     <string name="cam_zoom">Optical zoom</string>
@@ -109,7 +109,7 @@
     <string name="cam_applied">Settings applied</string>
     <string name="cam_gimbal_speed">Gimbal speed</string>
 
-    <!-- Gallery -->
+    <!-- Галерея -->
     <string name="gallery_title">Phone gallery</string>
     <string name="gallery_empty">No photos. Download frames from the camera.</string>
     <string name="gallery_delete">Delete</string>
@@ -117,7 +117,7 @@
     <string name="gallery_select_all">Select all</string>
     <string name="gallery_selected">Selected: %1$d</string>
 
-    <!-- App settings -->
+    <!-- Настройки приложения -->
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_dark">Theme</string>

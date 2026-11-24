@@ -67,11 +67,11 @@ public final class PanoramaActivity extends Activity {
     private android.view.SurfaceHolder previewHolder;
     private volatile boolean decodeActive;
 
-    /** 已经开始了 live-view 初始化（OSC 预览或 TCP 流），避免重复启动。 */
+    /** Инициализация предпросмотра (OSC или поток TCP) уже начата; не запускать её повторно. */
     private volatile boolean liveViewStarted;
-    /** OSC 预览失败后，是否已经启动了 TCP 流（gimbal 门控的兜底）。 */
+    /** Запущен ли поток TCP после сбоя предпросмотра OSC (резервный канал для управления гимбалом). */
     private volatile boolean streamStarted;
-    /** Пришёл хотя бы один кадр OSC-MJPEG — тогда gate гимбала уже удовлетворён. */
+    /** Получен хотя бы один кадр OSC-MJPEG — значит, условие разблокировки гимбала выполнено. */
     private volatile boolean previewFrames;
 
     /** Тема, применённая к этой активити: при возвращении с измененной темой пересоздаём. */
@@ -164,7 +164,7 @@ public final class PanoramaActivity extends Activity {
                             });
                         }
                     } catch (Throwable ignored) {
-                        // non fallire l'app su una notifica malformata
+                        // Некорректное уведомление не должно приводить к сбою приложения.
                     }
                 }
             };
@@ -175,11 +175,11 @@ public final class PanoramaActivity extends Activity {
     private static final long MJPEG_FIRST_FRAME_MS = 6000L;
 
     /**
-     * Максимальное время ожидания реального кадра live-view перед стартом съёмки.
+     * Максимальное время ожидания реального кадра предпросмотра перед стартом съёмки.
      *
-     * Камера отвечает 200 на START_LIVE_STREAM всегда, поэтому ack не значит, что стрим
+     * Камера отвечает 200 на START_LIVE_STREAM всегда, поэтому ответ не означает, что стрим
      * пошёл. По референсу (Ripwords useGimbal: ready = connected && previewActive) гимбал
-     * и съёмка работают только когда preview реально отдаёт кадры. Ждём фактического кадра
+     * и съёмка работают только когда предпросмотр действительно отдаёт кадры. Ждём фактического кадра
      * (MJPEG или TCP-декод), иначе гимбал игнорирует вектор скорости.
      */
     private static final long LIVE_VIEW_WAIT_MS = 20000L;
@@ -257,7 +257,7 @@ public final class PanoramaActivity extends Activity {
             }
         });
 
-        // Прямой эфир по TCP-потоку: декодируем MEDIA-фреймы на SurfaceView (fallback для
+        // Прямой эфир по TCP-потоку: декодируем MEDIA-фреймы на SurfaceView (резервный вариант для
         // OSC-MJPEG, как в официальном приложении Insta360).
         previewSurface = findViewById(R.id.preview_surface);
         previewHolder = previewSurface.getHolder();
@@ -378,8 +378,8 @@ public final class PanoramaActivity extends Activity {
             return;
         }
         app.addConnectionListener(connectionListener);
-        // Гимбал отвечает только во время трансляции preview. Когда камера уже
-        // подключена (или переподключается), запускаем live view до премотра.
+        // Гимбал отвечает только во время трансляции предпросмотра. При подключённой камере
+        // или повторном подключении запускаем предпросмотр до начала съёмки.
         if (app.isCameraConnected()) {
             ensureLiveView();
         }
@@ -473,7 +473,7 @@ public final class PanoramaActivity extends Activity {
                     new MjpegPreview.Listener() {
                         @Override
                         public void onFrame(Bitmap frame) {
-                            // OSC-MJPEG работает: это главный путь и он открывает gate гимбала.
+                            // OSC-MJPEG работает: это основной способ предпросмотра, разблокирующий гимбал.
                             previewFrames = true;
                             handler.removeCallbacks(mjpegWatchdog);
                             runOnUiThread(new Runnable() {
@@ -489,8 +489,8 @@ public final class PanoramaActivity extends Activity {
 
                         @Override
                         public void onError(final String message) {
-                            // Премотёр OSC недоступен: запускаем TCP-поток live
-                            // view — это условие, при котором гимбал отвечает.
+                            // Предпросмотр OSC недоступен: запускаем резервный видеопоток TCP,
+                            // необходимый для управления гимбалом.
                             handler.removeCallbacks(mjpegWatchdog);
                             startStreamFallback();
                             runOnUiThread(new Runnable() {
@@ -503,8 +503,8 @@ public final class PanoramaActivity extends Activity {
 
                         @Override
                         public void onClosed() {
-                            // Поток OSC закрылся. Если кадров не пришло, preview не активен,
-                            // и gate гимбала не удовлетворён: бросаемся на TCP-поток.
+                            // Поток OSC закрылся. Если кадры не поступали, предпросмотр не активен;
+                            // переключаемся на резервный поток TCP для управления гимбалом.
                             handler.removeCallbacks(mjpegWatchdog);
                             if (!previewFrames) {
                                 startStreamFallback();
@@ -519,7 +519,7 @@ public final class PanoramaActivity extends Activity {
                         }
                     });
             // Ни одного кадра OSC-MJPEG за отведённое время — камера его не предлагает:
-            // отдаём инициативу TCP-потоку (START_LIVE_STREAM), который тоже открывает gate.
+            // отдаём инициативу TCP-потоку (START_LIVE_STREAM), который тоже разблокирует гимбал.
             handler.removeCallbacks(mjpegWatchdog);
             handler.postDelayed(mjpegWatchdog, MJPEG_FIRST_FRAME_MS);
         } catch (Throwable t) {
@@ -558,14 +558,16 @@ public final class PanoramaActivity extends Activity {
     }
 
     /**
-     * Запускает live view один раз при подключении.
+     * Запускает предпросмотр один раз при подключении.
      *
-     * Только TCP-поток START_LIVE_STREAM — это и картинка (декод VideoDecoder на
-     * SurfaceView) и gate гимбала. Эмпирически на Luna Ultra: гимбал отзывается
-     * только на TCP-стрим START_LIVE_STREAM. OSC-MJPEG картинку даёт, но gate
-     * гимбала не открывает, и его присутствие ломает TCP-стрим (одна стримовая
-     * позиция): v1.11 (TCP только) — гимбал отзывается; MJPEG-only и «оба сразу»
-     * — гимбал мёртв. Поэтому MJPEG в гайд-цепочке не используем.
+     * TCP-поток START_LIVE_STREAM передаёт изображение (декодирование выполняет
+     * VideoDecoder на SurfaceView) и обеспечивает управление гимбалом. По результатам
+     * испытаний на Luna Ultra гимбал реагирует именно на TCP-поток START_LIVE_STREAM.
+     * OSC-MJPEG передаёт изображение, но сам по себе не разблокирует гимбал; при его
+     * одновременном использовании с TCP-потоком управление может не работать. В версии
+     * 1.11 управление работало только через TCP, а при использовании одного OSC-MJPEG
+     * или обоих каналов одновременно гимбал не реагировал. Поэтому OSC-MJPEG не включён
+     * в рекомендуемую последовательность запуска.
      */
     private void ensureLiveView() {
         if (liveViewStarted) {
@@ -574,32 +576,33 @@ public final class PanoramaActivity extends Activity {
         liveViewStarted = true;
         previewFrames = false;
         decodeActive = false;
-        // Gate гимбала и съёмки + картинка: TCP-поток START_LIVE_STREAM, декодируем на SurfaceView.
+        // TCP-поток START_LIVE_STREAM обеспечивает предпросмотр и разблокировку гимбала;
+        // изображение декодируется на SurfaceView.
         startStreamFallback();
     }
 
-    /** Live-view реально отдаёт кадры: либо OSC-MJPEG, либо TCP-поток расшифрован. */
+    /** Кадры поступают по OSC-MJPEG либо декодируются из потока TCP. */
     private boolean liveViewActive() {
         return previewFrames || decodeActive;
     }
 
     /**
-     * Ждёт реального кадра live-view, затем стартует панораму.
+     * Ждёт реального кадра предпросмотра, затем стартует панораму.
      *
-     * START_LIVE_STREAM отправлен (gate открыт), но камера ack'ает 200 на всё: ack не
-     * гарантирует, что стрим пошёл. По референсу гимбал отвечает только при реальном
-     * preview. Поэтому днём гайд на получение кадра, а не на отправку команды. Если
-     * кадра не пришло за LIVE_VIEW_WAIT_MS — стартуем anyway (лучше попытка, чем сумма
-     * без движения), но предупреждаем.
+     * Команда START_LIVE_STREAM отправлена, но камера всегда отвечает кодом 200; это не
+     * гарантирует запуск видеопотока. По имеющимся данным, гимбал отвечает только при
+     * работающем предпросмотре. Поэтому проверяется поступление кадра, а не только отправка
+     * команды. Если за LIVE_VIEW_WAIT_MS кадр не пришёл, съёмка всё равно начинается,
+     * но пользователь получает предупреждение.
      */
     private void startWithLiveViewGate() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                // Ждём кадр live-view. Если за 6 с не пришёл — перезапускаем стрим
-                // (объявление разворачивания + START): камера ack'ает START на всё, ack не
-                // гарантирует, что стрим пошёл. Гимбал и съёмка работают ТОЛЬКО при реальном
-                // стриме — без кадра панорама замерзнет в активном положении.
+                // Ждём кадр предпросмотра. Если за 6 секунд он не пришёл — перезапускаем поток
+                // (объявление состояния + START): камера отвечает кодом 200 на всё, этот ответ не
+                // гарантирует, что видеопоток запущен. Гимбал и съёмка работают ТОЛЬКО при реальном
+                // видеопотоке — без кадра панорама замерзнет в активном положении.
                 int retries = 0;
                 long deadline = System.currentTimeMillis() + LIVE_VIEW_WAIT_MS;
                 while (System.currentTimeMillis() < deadline && !liveViewActive()) {
@@ -611,7 +614,7 @@ public final class PanoramaActivity extends Activity {
                     }
                     if (!liveViewActive() && retries < 3) {
                         retries++;
-                        log("Live-view: кадра нет, перезапускаю стрим (попытка " + retries + ")");
+                        log("Предпросмотр: кадра нет, перезапускаю видеопоток (попытка " + retries + ")");
                         retryLiveStream();
                     }
                 }
@@ -621,7 +624,7 @@ public final class PanoramaActivity extends Activity {
                     public void run() {
                         try {
                             if (!ok) {
-                                log("Live-view не подтвердился кадром после retry: старт всё равно отдан");
+                                log("Предпросмотр не подтвердился кадром после повторных попыток; съёмка всё равно начнётся");
                             }
                             app.shooter().start(PanoPlan.shot24());
                         } catch (Throwable t) {
@@ -636,10 +639,9 @@ public final class PanoramaActivity extends Activity {
     }
 
     /**
-     * Запускает TCP-поток live view (START_LIVE_STREAM). Фалбэк, когда MJPEG
-     * OSC не принёс кадра: камера выполняет команды гимбала только во время
-     * трансляции preview, и этот поток открывает gate. Для декодирования кадров
-     * используем SurfaceView.
+     * Запускает видеопоток TCP (START_LIVE_STREAM). Это резервный способ, если
+     * OSC-MJPEG не передаёт кадры: камера принимает команды гимбала только при
+     * активном видеопотоке. Для декодирования кадров используется SurfaceView.
      */
     private void startStreamFallback() {
         if (streamStarted) {
@@ -674,9 +676,9 @@ public final class PanoramaActivity extends Activity {
     }
 
     /**
-     * Повторно отправляет объявление разворачивания + START_LIVE_STREAM (обходит guard
-     * startStreamFallback): если первый START не привёл к кадру, гимбал и съёмка не
-     * сработают — стрим должен реально идти. Используется gate'ом для retry.
+     * Повторно отправляет объявление состояния и START_LIVE_STREAM, обходя проверку
+     * startStreamFallback. Если первая команда START не привела к поступлению кадра,
+     * гимбал и съёмка не сработают: видеопоток должен быть действительно запущен.
      */
     private void retryLiveStream() {
         try {

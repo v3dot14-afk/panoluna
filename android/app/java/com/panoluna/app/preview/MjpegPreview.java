@@ -14,15 +14,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Anteprima MJPEG via l'endpoint OSC della camera.
+ * Предпросмотр MJPEG через интерфейс OSC камеры.
  *
- * E' la strada piu' semplice quando la camera la offre: una POST a
- * {@code /osc/commands/execute} con {@code camera.getLivePreview} restituisce un multipart di
- * JPEG, che basta ritagliare e decodificare. Nessun decoder video, nessuna superficie da
- * gestire.
+ * Если камера его поддерживает, это самый простой способ: запрос POST к
+ * {@code /osc/commands/execute} с командой {@code camera.getLivePreview} возвращает поток
+ * multipart с JPEG, кадры которого достаточно выделить и декодировать. Видеодекодер и
+ * отдельная поверхность не нужны.
  *
- * Il parsing non si fida degli header Content-Length del multipart — alcuni firmware li
- * omettono — e cerca i marcatori JPEG FFD8 ... FFD9 nel flusso.
+ * При разборе не используются заголовки Content-Length multipart-потока — некоторые версии
+ * прошивки их не передают. Вместо этого в потоке ищутся маркеры JPEG FFD8 ... FFD9.
  */
 public final class MjpegPreview {
 
@@ -65,7 +65,7 @@ public final class MjpegPreview {
             try {
                 c.disconnect();
             } catch (Exception ignored) {
-                // niente da fare
+                // Ничего делать не нужно.
             }
             connection = null;
         }
@@ -125,7 +125,7 @@ public final class MjpegPreview {
         }
     }
 
-    /** Estrae il prossimo JPEG completo, saltando gli header del multipart. */
+    /** Извлекает следующий полный JPEG, пропуская заголовки multipart. */
     private byte[] readNextJpeg(InputStream input) throws Exception {
         int previous = input.read();
         if (previous < 0) {

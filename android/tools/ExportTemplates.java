@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 /**
- * Genera i template di consegna dallo stesso codice dell'app: i file in templates/ e dist/
- * sono esattamente quelli che l'app esporta sul telefono.
- * Ogni build importa un solo set: la panoramica di 24 scatti.
+ * Создаёт шаблоны внешней обработки тем же кодом, что используется приложением.
+ * Файлы в templates/ и dist/ совпадают с теми, которые приложение экспортирует на телефон.
+ * При каждой сборке формируется только один набор: панорама из 24 кадров.
  */
 public final class ExportTemplates {
 
@@ -19,7 +19,7 @@ public final class ExportTemplates {
         pano2vr.mkdirs();
         dist.mkdirs();
 
-        // Solo la panoramica di 24 scatti.
+        // Только панорама из 24 кадров.
         PanoPlan plan = PanoPlan.shot24();
 
         String job = "PanoLuna_24shots";
@@ -28,7 +28,7 @@ public final class ExportTemplates {
         write(new File(pano2vr, job + ".p2vr"),
                 plan.toPano2vrProject(job + "_equirectangular.jpg"));
 
-        // Il lavoro completo in un'unica cartella.
+        // Все файлы проекта в одной папке.
         File jobDir = new File(dist, job);
         jobDir.mkdirs();
         write(new File(jobDir, job + ".pts"), plan.toPtGuiTemplate(job));
@@ -47,15 +47,15 @@ public final class ExportTemplates {
         sb.append("Сетка: ").append(plan.getRows()).append(" строк x ")
                 .append(plan.getColumns()).append(" столбцов\n");
         sb.append("Перекрытие: ").append(plan.getOverlapPercent()).append("%\n");
-        sb.append("Tilt: ").append(plan.getTiltBottom()).append(" .. ")
+        sb.append("Наклон: ").append(plan.getTiltBottom()).append(" .. ")
                 .append(plan.getTiltTop()).append(" градусов\n\n");
         sb.append("1) PTGui: откройте проект PanoLuna_24shots.pts\n");
         sb.append("   и перетащите ").append(plan.size())
                 .append(" фотографии: углы pan/pitch уже заданы по индексу.\n");
-        sb.append("   Выход: equirectangular 27654x13827 (2:1).\n\n");
-        sb.append("2) Pano2VR: два пути.\n");
-        sb.append("   a) проект PanoLuna_24shots.p2vr, который указывает на equirectangular\n");
-        sb.append("      сшитую в PTGui (переименуйте в PanoLuna_24shots_equirectangular.jpg).\n");
+        sb.append("   Выходной файл: равнопромежуточная панорама 27654x13827 (2:1).\n\n");
+        sb.append("2) Pano2VR: два способа.\n");
+        sb.append("   a) проект PanoLuna_24shots.p2vr, указывающий на равнопромежуточную панораму\n");
+        sb.append("      после сборки в PTGui (переименуйте её в PanoLuna_24shots_equirectangular.jpg).\n");
         sb.append("   b) Pro > File > Import Papywizard, с PanoLuna_24shots.papywizard.xml.\n");
         return sb.toString();
     }

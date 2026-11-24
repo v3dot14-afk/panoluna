@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-# Compila l'app PanoLuna senza Gradle ne Android SDK.
+# Собирает приложение PanoLuna без Gradle и Android SDK.
 #
-# Servono quattro pezzi, tutti recuperabili da npm/pypi (gli unici registry permessi):
-#   - aapt2            da npm:aaptjs3          (binario nativo Linux)
-#   - android.jar      da npm:@drxiaozhi/minapk (stub della piattaforma)
-#   - d8.jar           da npm:@drxiaozhi/minapk (Java -> DEX)
-#   - apksigner.jar    da npm:@drxiaozhi/minapk (firma APK)
-#   - ecj              da npm:@drxiaozhi/minapk (compilatore Java, perche' jdk4py e' un JRE)
-#   - JDK 17           da pypi:jdk4py
+# Нужны следующие компоненты; все доступны через разрешённые реестры npm/PyPI:
+#   - aapt2            из npm:aaptjs3          (собственный исполняемый файл Linux)
+#   - android.jar      из npm:@drxiaozhi/minapk (заглушки платформы)
+#   - d8.jar           из npm:@drxiaozhi/minapk (преобразование Java в DEX)
+#   - apksigner.jar    из npm:@drxiaozhi/minapk (подпись APK)
+#   - ecj              из npm:@drxiaozhi/minapk (компилятор Java, поскольку jdk4py — среда выполнения JRE)
+#   - JDK 17           из pypi:jdk4py
 #
-# Perche' non Gradle: non c'e' Android SDK in sandbox e dl.google.com non e' raggiungibile.
-# La catena e' la stessa che usa Gradle, solo messa in fila a mano:
-#   risorse -> binary XML + resources.arsc, java -> class -> dex, zip + zipalign -> firma.
+# Почему не Gradle: в среде нет Android SDK, а dl.google.com недоступен.
+# Используется та же цепочка, что и в Gradle, но её этапы запущены вручную:
+#   ресурсы -> двоичный XML + resources.arsc, Java -> классы -> DEX, ZIP + выравнивание -> подпись.
 
 set -euo pipefail
 
@@ -64,7 +64,7 @@ find_java() {
 find_java
 log "JDK: $("$JAVA" -version 2>&1 | head -1)"
 
-# ---- 2. Toolchain ------------------------------------------------------
+# ---- 2. Набор инструментов ------------------------------------------------------
 fetch_tools() {
     mkdir -p "$TOOLS"
     local tmp
@@ -93,7 +93,7 @@ fetch_tools() {
 }
 fetch_tools
 
-# ---- 3. Risorse --------------------------------------------------------
+# ---- 3. Ресурсы --------------------------------------------------------
 log "aapt2 compile"
 rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex"
@@ -134,7 +134,7 @@ find "$OUT/classes" -name '*.class' > "$OUT/classes.txt"
     @"$OUT/classes.txt"
 cp "$OUT/dex/classes.dex" "$OUT/classes.dex"
 
-# ---- 6. Pacchetto + allineamento --------------------------------------
+# ---- 6. Упаковка и выравнивание --------------------------------------
 log "zipalign"
 python3 - "$ROOT/zipapk.py" "$OUT/app-unaligned.apk" "$OUT/linked.apk" "$OUT/classes.dex" <<'PY'
 import sys
@@ -149,7 +149,7 @@ zipapk.build(entries, out)
 print('  voci:', len(entries))
 PY
 
-# ---- 7. Firma ----------------------------------------------------------
+# ---- 7. Подпись ----------------------------------------------------------
 log "apksigner"
 mkdir -p "$DIST"
 "$JAVA" -jar "$APKSIGNER" sign \

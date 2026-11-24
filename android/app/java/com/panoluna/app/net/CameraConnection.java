@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * TCP-транспорт протокола UCD2: hello/keep-alive, чтение фреймов и сопоставление
+ * TCP-транспорт протокола UCD2: установочный кадр и поддержание связи, чтение фреймов и сопоставление
  * ответов с запросами.
  *
  * Ответ связывается с командой по {@code requestId}, не по sequence number. Чтение сокета
@@ -33,13 +33,13 @@ public final class CameraConnection {
 
     private static final String TAG = "PanoLuna";
 
-    /** Ascolta le notifiche della camera (batteria, stato cattura, esposizione). */
+    /** Получает уведомления камеры (заряд батареи, состояние съёмки, выдержка). */
     public interface Listener {
         void onNotification(Ucd2.Frame frame);
 
         void onDisconnected(String reason);
 
-        /** Un fotogramma video e' arrivato (sottostream principale 0x20), payload Annex-B. */
+        /** Получен видеокадр (основной под-поток 0x20), данные в формате Annex-B. */
         void onVideoFrame(byte[] annexB);
     }
 
@@ -70,7 +70,7 @@ public final class CameraConnection {
         return connected;
     }
 
-    /** Apre il TCP verso la camera e autorizza la sessione con l'hello stream. */
+    /** Открывает TCP-соединение с камерой и авторизует сеанс приветственным потоковым фреймом. */
     public void connect(String host, int port, Network bindNetwork, long connectTimeoutMs)
             throws IOException {
         disconnect();
@@ -118,7 +118,7 @@ public final class CameraConnection {
         failPending("Сеанс закрыт");
     }
 
-    /** Invia un comando e attende la risposta correlata dal requestId. */
+    /** Отправляет команду и ждёт ответ, сопоставленный по requestId. */
     public CompletableFuture<Ucd2.Frame> request(final int code, final byte[] payload,
                                                  final long timeoutMs) {
         if (!connected) {
@@ -148,7 +148,7 @@ public final class CameraConnection {
         return future;
     }
 
-    /** Invio senza attesa: per i comandi ripetuti ad alta frequenza, come il gimbal. */
+    /** Отправляет без ожидания ответа: для часто повторяемых команд, например управления гимбалом. */
     public boolean fire(int code, byte[] payload) {
         if (!connected) {
             return false;
@@ -217,7 +217,7 @@ public final class CameraConnection {
         try {
             s.close();
         } catch (IOException ignored) {
-            // niente da fare
+            // Ничего делать не нужно.
         }
     }
 
@@ -290,9 +290,9 @@ public final class CameraConnection {
                     l.onNotification(frame);
                 }
             } catch (Throwable t) {
-                // NISSUNA eccezione nel gestore del frame deve far cadere l'app:
-                // il thread di lettura continua a lavorare.
-                Log.w(TAG, "Gestore del frame terminato con eccezione: " + t);
+                // Ошибка при обработке кадра не должна аварийно завершать приложение:
+                // поток чтения должен продолжать работу.
+                Log.w(TAG, "Обработчик кадра завершился с исключением: " + t);
             }
         }
     }

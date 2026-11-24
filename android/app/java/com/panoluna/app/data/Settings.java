@@ -56,7 +56,7 @@ public final class Settings {
         return prefs;
     }
 
-    // ---- Rete ----
+    // ---- Сеть ----
 
     public String getHost() {
         return prefs.getString(KEY_HOST, "192.168.42.1");
@@ -86,7 +86,7 @@ public final class Settings {
         prefs.edit().putLong(KEY_TIMEOUT, value).apply();
     }
 
-    // ---- Gimbal ----
+    // ---- Гимбал ----
 
     public int getGimbalSpeedLevel() {
         return prefs.getInt(KEY_GIMBAL_SPEED, 3);
@@ -96,7 +96,7 @@ public final class Settings {
         prefs.edit().putInt(KEY_GIMBAL_SPEED, value).apply();
     }
 
-    /** Fattore misurato su Luna Ultra: il gimbal si muove ~1,235 volte quanto comandato. */
+    /** Измеренный коэффициент для Luna Ultra: гимбал проходит примерно в 1,235 раза больше заданного. */
     public float getPanScale() {
         // 1.0: базовая скорость взята из замера на реальной Luna Ultra (57 °/с при команде 90).
         return prefs.getFloat(KEY_PAN_SCALE, 1f);

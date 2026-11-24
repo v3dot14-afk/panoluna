@@ -56,12 +56,12 @@ public final class AnnexB {
                 && bytes[at + 2] == 0 && bytes[at + 3] == 1 ? 4 : 3;
     }
 
-    /** Тип NAL H.264: 5 старших бит первого байта payload. */
+    /** Тип NAL H.264: 5 старших бит первого байта данных. */
     public static int h264NalType(byte firstByte) {
         return firstByte & 0x1F;
     }
 
-    /** Тип NAL H.265: биты 1..6 первого байта payload. */
+    /** Тип NAL H.265: биты 1..6 первого байта данных. */
     public static int h265NalType(byte firstByte) {
         return (firstByte & 0xFF) >> 1 & 0x3F;
     }

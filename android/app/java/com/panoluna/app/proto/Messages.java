@@ -3,7 +3,7 @@ package com.panoluna.app.proto;
 import java.util.List;
 
 /**
- * Чистые функции для protobuf payload: сериализация аргументов команд и разбор ответов.
+ * Чистые функции для полезные данные protobuf: сериализация аргументов команд и разбор ответов.
  *
  * Методы только формируют/читают байты — сами ничего не отправляют и не меняют на камере.
  * Фактические сетевые вызовы находятся в {@code CameraClient}; перед добавлением нового
@@ -14,7 +14,7 @@ public final class Messages {
     private Messages() {
     }
 
-    /** GetOptions { repeated OptionType option_types = 1 } */
+    /** Поля GetOptions: repeated OptionType option_types = 1. */
     public static byte[] getOptions(int... types) {
         Proto.Writer w = new Proto.Writer();
         for (int type : types) {
@@ -23,7 +23,7 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** SetOptions { repeated OptionType option_types = 1; Options value = 2 } */
+    /** Поля SetOptions: repeated OptionType option_types = 1; Options value = 2. */
     public static byte[] setOption(int optionType, int field, int value) {
         Proto.Writer nested = new Proto.Writer();
         nested.int32(field, value);
@@ -33,7 +33,7 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** TakePicture { Mode mode = 1; bool isInstaPanoEnabled = 5 } */
+    /** Поля TakePicture: Mode mode = 1; bool isInstaPanoEnabled = 5. */
     public static byte[] takePicture(int mode) {
         Proto.Writer w = new Proto.Writer();
         if (mode != 0) {
@@ -43,9 +43,9 @@ public final class Messages {
     }
 
     /**
-     * TakePicture per una panoramica: mode NORMAL (0, omesso) e
-     * isInstaPanoEnabled=true sul campo 5. La camera deve essere già in modalità
-     * pano (photo_sub_mode = PHOTO_INSTA_PANO) per attivare lo scatto a panoramica.
+     * TakePicture для встроенной панорамы: mode NORMAL (0, поле опущено),
+     * isInstaPanoEnabled=true в поле 5. Для такого снимка камера должна быть в режиме
+     * панорамы (photo_sub_mode = PHOTO_INSTA_PANO).
      */
     public static byte[] takePicturePano() {
         Proto.Writer w = new Proto.Writer();
@@ -53,7 +53,7 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** SetAccessCameraFileState { AccessState access_state = 1 }: 5 = live view. */
+    /** Поля SetAccessCameraFileState: AccessState access_state = 1; значение 5 — live view. */
     public static byte[] setAccessCameraFileState(int accessState) {
         Proto.Writer w = new Proto.Writer();
         w.int32(1, accessState);
@@ -61,12 +61,12 @@ public final class Messages {
     }
 
     /**
-     * StartLiveStream { bool enable_video = 2; uint32 video_bitrate = 6;
+     * Поля StartLiveStream: bool enable_video = 2; uint32 video_bitrate = 6;
      * VideoResolution resolution = 7; bool enable_gyro = 8;
-     * uint32 video_bitrate1 = 9; VideoResolution resolution1 = 10 }.
+     * uint32 video_bitrate1 = 9; VideoResolution resolution1 = 10.
      *
-     * Corpo identico a quello della referenz-app: attiva la trasmissione del
-     * preview, che è condizione per far rispondere il gimbal.
+     * Данные совпадают с проверенным приложением-образцом: команда запускает передачу
+     * предпросмотра, необходимую для реакции гимбала.
      */
     public static byte[] startLiveStream() {
         Proto.Writer w = new Proto.Writer();
@@ -79,18 +79,18 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** Imposta photo_sub_mode (PHOTO_SINGLE o PHOTO_INSTA_PANO) via SET_OPTIONS. */
+    /** Устанавливает photo_sub_mode (PHOTO_SINGLE или PHOTO_INSTA_PANO) командой SET_OPTIONS. */
     public static byte[] setPhotoSubMode(int subMode) {
         return setOption(ProtoCodes.OptionType.PHOTO_SUB_MODE,
                 ProtoCodes.OptionsField.PHOTO_SUB_MODE, subMode);
     }
 
     /**
-     * Vettore della levetta del gimbal.
+     * Вектор управления гимбалом.
      *
-     * L'interfaccia usa orizzontale/verticale in -100..100; la camera usa gli assi ruotati
-     * device_x = verticale, device_y = orizzontale. Il vettore nullo produce esattamente
-     * {@code 08 01 12 00} ed e' il comando di stop.
+     * Интерфейс задаёт горизонтальную и вертикальную оси в диапазоне −100…100; камера
+     * использует повёрнутые оси: device_x — вертикаль, device_y — горизонталь. Нулевой
+     * вектор формирует точную последовательность {@code 08 01 12 00} — команду остановки.
      */
     public static byte[] gimbalMove(int horizontal, int vertical) {
         horizontal = clamp(horizontal, -100, 100);
@@ -108,14 +108,14 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** Azione del gimbal senza assi: il solo campo 1. */
+    /** Действие гимбала без осей: только поле 1. */
     public static byte[] gimbalAction(int action) {
         Proto.Writer w = new Proto.Writer();
         w.int32(1, action);
         return w.toByteArray();
     }
 
-    /** Scrittura del livello hardware del gimbal: 1 lento, 2 medio, 3 veloce. */
+    /** Задаёт аппаратный уровень скорости гимбала: 1 — низкий, 2 — средний, 3 — высокий. */
     public static byte[] setGimbalSpeed(int level) {
         Proto.Writer inner = new Proto.Writer();
         inner.int32(2, level);
@@ -128,7 +128,7 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** GetFileList { MediaType media_type = 1; uint32 start = 2; uint32 limit = 3 } */
+    /** Поля GetFileList: MediaType media_type = 1; uint32 start = 2; uint32 limit = 3. */
     public static byte[] getFileList(int mediaType, int start, int limit) {
         Proto.Writer w = new Proto.Writer();
         w.int32(1, mediaType);
@@ -137,7 +137,7 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    /** GetFileExtra { string uri = 1; uint32 extra_type = 2 } */
+    /** Поля GetFileExtra: string uri = 1; uint32 extra_type = 2. */
     public static byte[] getFileExtra(String uri, int extraType) {
         Proto.Writer w = new Proto.Writer();
         w.string(1, uri);
@@ -153,9 +153,9 @@ public final class Messages {
         return w.toByteArray();
     }
 
-    // ---- Lettura delle risposte ----
+    // ---- Разбор ответов ----
 
-    /** Il percorso della foto appena scritta: TakePictureResponse.image.uri. */
+    /** Путь к только что записанному снимку: TakePictureResponse.image.uri. */
     public static String photoUri(byte[] payload) {
         Proto.Reader r = new Proto.Reader(payload);
         String uri = r.stringOrNull(ProtoCodes.PhotoField.IMAGE, ProtoCodes.PhotoField.URI);
@@ -165,7 +165,7 @@ public final class Messages {
         return uri;
     }
 
-    /** CameraCaptureStatus: state=1, capture_time=2. Nella risposta e' annidato nel campo 1. */
+    /** CameraCaptureStatus: state=1 (состояние), capture_time=2 (время съёмки). В ответе сообщение вложено в поле 1. */
     public static int captureState(byte[] payload, boolean nested) {
         Proto.Reader r = new Proto.Reader(payload);
         Integer state = nested
@@ -181,7 +181,7 @@ public final class Messages {
                 : r.intOrNull(ProtoCodes.CaptureStatusField.CAPTURE_TIME);
     }
 
-    /** GetFileListResp { repeated string uri = 1; uint32 total_count = 2 } */
+    /** Поля GetFileListResp: repeated string uri = 1; uint32 total_count = 2. */
     public static String[] fileListUris(byte[] payload) {
         Proto.Reader r = new Proto.Reader(payload);
         java.util.List<FieldList> list = new java.util.ArrayList<FieldList>();
@@ -201,7 +201,7 @@ public final class Messages {
         return new Proto.Reader(payload).intOrNull(2);
     }
 
-    /** Options: il valore e' nel campo 2 di GetOptionsResp. */
+    /** Options: значение находится в поле 2 ответа GetOptionsResp. */
     public static byte[] optionsValue(byte[] payload) {
         Proto.Field f = new Proto.Reader(payload).find(ProtoCodes.FIELD_OPTIONS_VALUE);
         return f == null ? new byte[0] : f.length;

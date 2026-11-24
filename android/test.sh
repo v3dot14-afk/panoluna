@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Verifica i pezzi di logica che girano sulla JVM, senza Android:
-# codec UCD2, messaggi protobuf, piano degli scatti, esportazioni.
+# Проверяет части логики, выполняемые на JVM без Android:
+# кодек UCD2, сообщения protobuf, план съёмки и экспорт.
 #
-# Non sostituisce un test su dispositivo: quello che verifica e' il comportamento della camera.
+# Это не заменяет проверку на устройстве: скрипт не тестирует поведение камеры.
 
 set -euo pipefail
 

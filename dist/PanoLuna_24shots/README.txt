@@ -1,14 +1,14 @@
-PanoLuna - работа из 24 снимков
-Камера: Insta360 Luna Ultra, объектив 1x
-Сетка: 4 строк x 6 столбцов
+PanoLuna — панорама из 24 снимков
+Камера: Insta360 Luna Ultra, объектив 1×
+Сетка: 4 ряда × 6 столбцов
 Перекрытие: 23%
-Tilt: -58.85 .. 58.85 градусов
+Наклон: от −58,85° до 58,85°
 
 1) PTGui: откройте проект PanoLuna_24shots.pts
-   и перетащите 24 фотографии: углы pan/pitch уже заданы по индексу.
-   Выход: equirectangular 27654x13827 (2:1).
+   и перетащите 24 фотографии: углы поворота и наклона заданы для каждого кадра.
+   Выходной файл: равнопромежуточная панорама 27654x13827 (2:1).
 
-2) Pano2VR: два пути.
-   a) проект PanoLuna_24shots.p2vr, который указывает на equirectangular
-      сшитую в PTGui (переименуйте в PanoLuna_24shots_equirectangular.jpg).
-   b) Pro > File > Import Papywizard, с PanoLuna_24shots.papywizard.xml.
+2) Pano2VR: два способа.
+   a) проект PanoLuna_24shots.p2vr, указывающий на равнопромежуточную панораму
+      после сборки в PTGui (переименуйте её в PanoLuna_24shots_equirectangular.jpg).
+   b) Pro > File > Import Papywizard с файлом PanoLuna_24shots.papywizard.xml.

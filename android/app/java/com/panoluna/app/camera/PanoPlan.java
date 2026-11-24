@@ -197,7 +197,7 @@ public final class PanoPlan {
     /** Соответствующий вертикальный угол поля зрения, в 4:3. */
     public static final float MEASURED_VFOV_DEG = 62.3f;
 
-    /** Приведённый эквивалент фокусного расстояния 35 мм, дающий измеренный угол, в 4:3 full frame. */
+    /** Приведённый эквивалент фокусного расстояния 35 мм, дающий измеренный угол, для полнокадрового формата 4:3. */
     public static final float EQUIVALENT_FOCAL_MM = 21.5f;
 
     /**
@@ -395,7 +395,7 @@ public final class PanoPlan {
         return String.format(java.util.Locale.US, "%.4f", value);
     }
 
-    /** XML Papywizard: альтернатива, которую PTGui импортирует через File > Import Papywizard. */
+    /** XML Papywizard: альтернативный формат, импортируемый в PTGui через пункт File > Import Papywizard. */
     public String toPapywizardXml() {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");

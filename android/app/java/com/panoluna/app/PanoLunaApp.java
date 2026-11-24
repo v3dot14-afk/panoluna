@@ -311,8 +311,8 @@ public final class PanoLunaApp extends Application {
     }
 
     /**
-     * Cerca la Wi-Fi corrente e la pianta: senza una richiesta in piedi Android la considera
-     * inutile (nessun Internet) e la lascia appena l'app passa in secondo piano.
+     * Находит текущую сеть Wi-Fi и удерживает её активной: без активного запроса Android
+     * считает сеть ненужной (у неё нет доступа к интернету) и отключает её при сворачивании приложения.
      */
     private Network currentWifiNetwork() {
         if (connectivity == null) {
@@ -373,9 +373,9 @@ public final class PanoLunaApp extends Application {
     }
 
     /**
-     * Apre la sessione di controllo UCD2 verso la camera по IP. La Wi-Fi corrente viene
-     * cercata, piantata e il socket ad essa legato: così la sessione resta viva e gli
-     * comandi (gimbal, scatto) non precipitano per caduta della rete.
+     * Открывает управляющий сеанс UCD2 с камерой по IP. Текущая сеть Wi-Fi определяется
+     * и удерживается активной, а сокет привязывается к ней: так сеанс и команды
+     * (гимбал, съёмка) не прерываются из-за отключения сети.
      */
     public boolean connectCamera() {
         try {

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pano2VR project file - PanoLuna, Insta360 Luna Ultra -->
+<!-- Файл проекта Pano2VR — PanoLuna для Insta360 Luna Ultra -->
 <!--
-  Workflow: 24 кадра -> PTGui (PanoLuna_24scatti.pts) -> equirectangular 2:1
-  Этот проект уже нацелен на equirectangular: открыть в pano2vr и
-  использовать 'Crea tutto'. Для выравнивания отдельных фото использовать
-  Papywizard XML (File > Import Papywizard в pano2vr Pro).
+  Порядок обработки: 24 кадра -> PTGui (PanoLuna_24shots.pts) -> равнопромежуточная панорама 2:1
+  Проект уже настроен на равнопромежуточную панораму: откройте его в Pano2VR и
+  запустите сборку панорамы. Для выравнивания отдельных снимков используйте
+  XML Papywizard (меню File > Import Papywizard в Pano2VR Pro).
 -->
 <pano2vrconfig>
   <panorama>

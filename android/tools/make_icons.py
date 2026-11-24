@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Genera le icone del launcher come PNG, senza dipendenze esterne.
+"""Создаёт значки запуска в формате PNG без внешних зависимостей.
 
-Disegna un cerchio ambra con i meridiani di una sfera: la stessa pictogramma usata per il
-comando della panoramica. Il disegno e' fatto per supersampling (4x) per avere i bordi morbidi.
+Рисует янтарный круг с меридианами сферы — ту же пиктограмму, что используется для
+панорамы. Для сглаживания краёв изображение рисуется с четырёхкратным увеличением.
 """
 import os
 import struct
@@ -46,7 +46,7 @@ def render(size):
                 alpha = (outer + ss - dist) / ss
             if alpha > 0:
                 pixels[y][x] = blend(pixels[y][x], AMBER, alpha)
-    # Meridiani: un'ellisse verticale e due linee orizzontali, in dark.
+    # Меридианы: вертикальный эллипс и две горизонтальные линии тёмного цвета.
     for y in range(big):
         for x in range(big):
             dx = x - center
@@ -61,7 +61,7 @@ def render(size):
             on_meridian = abs(u) < 0.012
             if on_ellipse or on_equator or on_meridian:
                 pixels[y][x] = blend(pixels[y][x], DARK, 0.92)
-    # Downsample
+    # Уменьшение изображения с усреднением.
     out = [[(0, 0, 0, 255) for _ in range(size)] for _ in range(size)]
     for y in range(size):
         for x in range(size):

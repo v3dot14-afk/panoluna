@@ -16,14 +16,14 @@ import java.util.concurrent.Executors;
 /**
  * Высокоуровневые команды камере и разбор ответов протокола {@code insta360.messages}.
  *
- * Операции с I/O выполняются в пуле потоков, callback возвращаются в UI-поток. Ответ камеры
+ * Операции с I/O выполняются в пуле потоков, обратные вызовы выполняются в потоке интерфейса. Ответ камеры
  * сам по себе не подтверждает, что настройка применена: для ряда команд прошивка отвечает
  * одинаковым кодом. В частности, статус режима/скорости по отдельному запросу не читается.
  * Настройки разрешения, RAW, экспозиции, баланса белого и зума этой версией не изменяются.
  */
 public final class CameraClient {
 
-    /** Callback semplice, sempre invocato sul thread principale. */
+    /** Простой обратный вызов, всегда выполняемый в главном потоке. */
     public interface Callback<T> {
         void onResult(T value);
 
@@ -33,10 +33,10 @@ public final class CameraClient {
     private final Settings settings;
     private final CameraConnection connection;
     private final Handler main = new Handler(Looper.getMainLooper());
-    // Пул, а не один поток: enterLiveView e awaitCaptureIdle ждут ответа секундами и
-    // блокировали бы единый io-поток, мешая другим командам (например enterPanoMode)
-    // дойти до камеры вовремя. Камера коррелирует по requestId, поэтому параллельно
-    // можно.
+    // Используется пул, а не один поток: enterLiveView и awaitCaptureIdle могут ждать ответа
+    // несколько секунд и заблокировали бы общий поток ввода-вывода, задерживая другие команды
+    // (например, enterPanoMode). Камера сопоставляет запросы по requestId, поэтому их можно
+    // отправлять параллельно.
     private final ExecutorService io = Executors.newFixedThreadPool(4);
     private volatile String lastError;
 
@@ -57,7 +57,7 @@ public final class CameraClient {
         lastError = reason;
     }
 
-    /** Esegue un comando sul thread di I/O e consegna il risultato al thread principale. */
+    /** Выполняет команду в потоке ввода-вывода и передаёт результат в главный поток. */
     private <T> void run(final int code, final byte[] payload, final long timeoutMs,
                          final ValueReader<T> reader, final Callback<T> callback) {
         io.execute(new Runnable() {
@@ -94,7 +94,7 @@ public final class CameraClient {
         return message == null ? cause.getClass().getSimpleName() : message;
     }
 
-    // ---- Stato ----
+    // ---- Состояние ----
 
     public static final class CameraInfo {
         public String model;
@@ -155,7 +155,7 @@ public final class CameraClient {
                 }, callback);
     }
 
-    /** Legge lo stato di cattura corrente: serve a sapere quando la camera e' di nuovo libera. */
+    /** Читает текущее состояние съёмки, чтобы определить, когда камера снова свободна. */
     public void fetchCaptureState(final Callback<Integer> callback) {
         run(ProtoCodes.GET_CURRENT_CAPTURE_STATUS, new byte[0], settings.getRequestTimeoutMs(),
                 new ValueReader<Integer>() {
@@ -166,9 +166,9 @@ public final class CameraClient {
                 }, callback);
     }
 
-    // ---- Scatto ----
+    // ---- Съёмка ----
 
-    /** Scatto singolo. La risposta arriva quando la camera ha accettato; il file arriva dopo. */
+    /** Одиночный снимок. Ответ приходит после принятия команды камерой, файл записывается позже. */
     public void takePicture(final Callback<String> callback) {
         run(ProtoCodes.TAKE_PICTURE,
                 Messages.takePicture(ProtoCodes.TakePictureMode.NORMAL),
@@ -181,8 +181,8 @@ public final class CameraClient {
     }
 
     /**
-     * Scattare una panoramica: la camera deve essere già in modalità pano e il
-     * corpo deve portare isInstaPanoEnabled=true.
+     * Съёмка встроенной панорамы: камера должна быть уже переведена в режим панорамы,
+     * а сообщение должно содержать isInstaPanoEnabled=true.
      */
     public void takePicturePano(final Callback<String> callback) {
         run(ProtoCodes.TAKE_PICTURE,
@@ -196,9 +196,9 @@ public final class CameraClient {
     }
 
     /**
-     * Запускает live-view через TCP-команду START_LIVE_STREAM.
+     * Запускает предпросмотр в реальном времени командой START_LIVE_STREAM.
      *
-     * Перед START текущая реализация best-effort отправляет SET_ACCESS_CAMERA_FILE_STATE
+     * Перед START текущая реализация пытается отправить SET_ACCESS_CAMERA_FILE_STATE
      * с LIVE_VIEW=5. Влияние этой предварительной команды зависит от прошивки и состояния
      * камеры и не подтверждено этим методом. Успешный ответ START также не гарантирует
      * поступление видео: наличие первого кадра проверяет вызывающий код.
@@ -207,14 +207,14 @@ public final class CameraClient {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Best-effort объявление состояния перед START. Ожидание ответа сохраняет
-                // порядок запросов; отказ не блокирует запуск TCP live-stream.
+                // Объявление состояния отправляется до START; ожидание ответа сохраняет
+                // порядок запросов; отказ не блокирует запуск видеопотока TCP.
                 try {
                     connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
                             Messages.setAccessCameraFileState(5),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // старое firmware может не знать команду — START всё равно пойдёт
+                    // Старая прошивка может не знать эту команду — START всё равно будет отправлена.
                 }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
@@ -244,9 +244,9 @@ public final class CameraClient {
      * Разблокирует камеру, зависшую в состоянии съёмки.
      *
      * Снимок в выбранном на камере режиме проходит через ту же цепочку, что держит
-     * live-view. Если камера не закрыла цикл захвата (статус остаётся «занято» дольше
+     * предпросмотр в реальном времени. Если камера не закрыла цикл захвата (статус остаётся «занято» дольше
      * заданного таймаута), повторный START_LIVE_STREAM может восстановить цепочку.
-     * Это best-effort приём; он не подтверждает целостность записанного файла. Тот же приём, что
+     * Это попытка восстановления, которая не подтверждает целостность записанного файла. Такой же приём используется в
      * ensureRunningForCapture() в PreviewController эталона.
      */
     public void recoverFromStuckCapture() {
@@ -258,14 +258,14 @@ public final class CameraClient {
                             Messages.setAccessCameraFileState(5),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // старое firmware может не знать команду
+                    // Старая прошивка может не знать эту команду.
                 }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // ack не гарантирует стрим; важен сам факт повторного START
+                    // Ответ не гарантирует запуск видеопотока; важен сам факт повторной команды START
                 }
             }
         });
@@ -300,7 +300,7 @@ public final class CameraClient {
      * Переподключается к камере после обрыва.
      *
      * Камера рвёт управляющий TCP во время съёмки — это известное поведение Luna
-     * (в Ripwords есть auto-reconnect с backoff). Переподключаемся на ту же сеть,
+     * (в Ripwords используется автоматическое переподключение с увеличивающимися интервалами). Переподключаемся на ту же сеть,
      * что была при первом подключении, иначе Android уйдёт в мобильную сеть.
      *
      * @return true, если сокет снова открыт
@@ -314,7 +314,7 @@ public final class CameraClient {
         }
     }
 
-    /** Best-effort объявление LIVE_VIEW и запуск TCP live-stream; кадр проверяется отдельно. */
+    /** Объявляет LIVE_VIEW, запускает видеопоток TCP; наличие кадра проверяется отдельно. */
     public void announceLiveView() {
         io.execute(new Runnable() {
             @Override
@@ -324,14 +324,14 @@ public final class CameraClient {
                             Messages.setAccessCameraFileState(5),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // старое firmware может не знать команду — START всё равно пойдёт
+                    // Старая прошивка может не знать эту команду — START всё равно будет отправлена.
                 }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // START ack не гарантирует кадр; повтор — только страховка
+                    // Ответ START не гарантирует поступление кадра; повторная команда служит страховкой.
                 }
             }
         });
@@ -339,28 +339,28 @@ public final class CameraClient {
 
     /**
      * Повторно отправляет объявление LIVE_VIEW и START без предварительного STOP.
-     * Используется как best-effort восстановление; фактическое возобновление видеокадров
+     * Используется для попытки восстановления; фактическое возобновление видеокадров
      * и управления гимбалом этим методом не подтверждается.
      */
     public void restartLiveView() {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Сначала best-effort объявление LIVE_VIEW, затем START. STOP не отправляем,
+                // Сначала отправляем LIVE_VIEW, затем START. STOP не отправляем,
                 // чтобы не прерывать уже работающий стрим; результат по кадрам проверяется отдельно.
                 try {
                     connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
                             Messages.setAccessCameraFileState(5),
                             settings.getRequestTimeoutMs()).get();
                 } catch (Throwable ignored) {
-                    // старое firmware может не знать команду
+                    // Старая прошивка может не знать эту команду.
                 }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
                             settings.getRequestTimeoutMs()).get();
                 } catch (final Exception e) {
-                    // START ack не означает, что стрим пошёл; команды гимбала
+                    // Ответ START не означает, что видеопоток запущен; команды гимбала
                     // отправляются на каждом движении, и стрим вернётся
                 }
             }
@@ -372,7 +372,7 @@ public final class CameraClient {
      *
      * SINGLE (0) — обычный кадр, используемый для внешней 24-кадровой сшивки.
      * INSTA_PANO (8) включает отдельный встроенный режим камеры; приложение его не вызывает.
-     * Boolean callback означает только, что пришёл ответ, а не что состояние было прочитано
+     * Значение обратного вызова типа Boolean означает только, что пришёл ответ, а не что состояние было прочитано
      * обратно и независимо подтверждено.
      */
     public void setPhotoSubMode(final int subMode, final Callback<Boolean> callback) {
@@ -440,9 +440,9 @@ public final class CameraClient {
         });
     }
 
-    // ---- Gimbal ----
+    // ---- Гимбал ----
 
-    /** Movimento a velocita': panPercent e tiltPercent vanno da -1 a +1. */
+    /** Движение с заданной скоростью: panPercent и tiltPercent находятся в диапазоне от −1 до +1. */
     public boolean gimbalVelocity(float panPercent, float tiltPercent) {
         float pan = clamp(panPercent, -1f, 1f);
         float tilt = clamp(tiltPercent, -1f, 1f);
@@ -456,7 +456,7 @@ public final class CameraClient {
                 Messages.gimbalMove(Math.round(pan * 100f), Math.round(tilt * 100f)));
     }
 
-    /** Stop del gimbal: il vettore nullo, ripetuto perche' un pacchetto puo' perderci. */
+    /** Останавливает гимбал: нулевой вектор отправляется несколько раз, чтобы компенсировать возможную потерю пакета. */
     public void gimbalStop() {
         for (int i = 0; i < 4; i++) {
             connection.fire(ProtoCodes.GIMBAL_CONTROL, Messages.gimbalMove(0, 0));
@@ -493,7 +493,7 @@ public final class CameraClient {
                 }, callback);
     }
 
-    // ---- File ----
+    // ---- Файлы ----
 
     public static final class FilePage {
         public String[] uris;
