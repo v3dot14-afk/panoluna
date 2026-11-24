@@ -108,18 +108,34 @@ public final class Smoke {
         check((PanoPlan.PAN_MAX_DEG - PanoPlan.PAN_MIN_DEG) + 77.7f >= 360f,
                 "охват хода + FOV покрывает 360°");
 
-        // 8. PTGui: 25 linee o, dummy a posto ultimo con proiezione f2, p-line 2:1
+        // 8. PTGui: ровно 24 строки o (по одной на кадр), без dummy, p-line 2:1,
+        // контрольные точки между соседями, yaw в пределах 0..360.
         String pts = plan.toPtGuiTemplate("PanoLuna_24shots");
         int oLines = 0;
-        String lastO = "";
+        int cpLines = 0;
+        boolean yawInRange = true;
         for (String line : pts.split("\r\n")) {
             if (line.startsWith("o ")) {
                 oLines++;
-                lastO = line;
+                int idx = line.indexOf(" y");
+                if (idx > 0) {
+                    int end = line.indexOf(' ', idx + 2);
+                    try {
+                        float yaw = Float.parseFloat(line.substring(idx + 2, end));
+                        if (yaw < -0.01f || yaw > 360.01f) {
+                            yawInRange = false;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            } else if (line.startsWith("c ")) {
+                cpLines++;
             }
         }
-        check(oLines == 25, "25 строк o (24 фото + dummy), найдено " + oLines);
-        check(lastO.contains("f2"), "dummy o-line последний с f2: " + lastO);
+        check(oLines == 24, "24 строки o (по одной на кадр), найдено " + oLines);
+        check(!pts.contains("dummy"), "без dummy-изображения");
+        check(cpLines > 0, "контрольные точки присутствуют: " + cpLines);
+        check(yawInRange, "yaw в пределах 0..360");
         check(pts.contains("p w27654 h13827 f2 v360"), "p-line 2:1");
         check(pts.contains("#-fileversion 49"), "fileversion 49");
         check(pts.contains("v77.7"), "hfov измеренный 77.7");

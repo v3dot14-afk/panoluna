@@ -28,13 +28,33 @@ public final class SettingsActivity extends Activity {
     private EditText tiltMin;
     private EditText tiltMax;
     private EditText scale;
-    private Switch darkTheme;
+    private android.widget.Spinner themeSpinner;
+
+    /** Тема выбирается до создания окна: после super.onCreate смена не видна. */
+    private void applyThemeBeforeWindow() {
+        try {
+            boolean dark;
+            int mode = app.settings().themeMode();
+            if (mode == Settings.THEME_DARK) {
+                dark = true;
+            } else if (mode == Settings.THEME_LIGHT) {
+                dark = false;
+            } else {
+                dark = (getResources().getConfiguration().uiMode
+                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            }
+            setTheme(dark ? com.panoluna.app.R.style.AppTheme
+                    : com.panoluna.app.R.style.AppTheme_Light);
+        } catch (Throwable ignored) {
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        app = PanoLunaApp.get(getApplicationContext());
+        applyThemeBeforeWindow();
         super.onCreate(savedInstanceState);
-        app = PanoLunaApp.get(this);
-        app.applyTheme(this);
         setContentView(R.layout.activity_settings);
 
         host = findViewById(R.id.set_host);
@@ -45,7 +65,7 @@ public final class SettingsActivity extends Activity {
         tiltMin = findViewById(R.id.set_tilt_min);
         tiltMax = findViewById(R.id.set_tilt_max);
         scale = findViewById(R.id.set_scale);
-        darkTheme = findViewById(R.id.set_dark_theme);
+        themeSpinner = findViewById(R.id.set_theme_mode);
 
         host.setText(app.settings().getHost());
         port.setText(String.valueOf(app.settings().getPort()));
@@ -55,14 +75,33 @@ public final class SettingsActivity extends Activity {
         tiltMin.setText(String.valueOf(app.settings().getTiltMin()));
         tiltMax.setText(String.valueOf(app.settings().getTiltMax()));
         scale.setText(String.valueOf(app.settings().getPanScale()));
-        darkTheme.setChecked(app.settings().darkTheme());
-
-        darkTheme.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+        // Спиннер темы: порядок ровно как в strings/settings_theme_options:
+        // 0 тёмная, 1 светлая, 2 как в системе. Значения Settings.THEME_* совпадают.
+        android.widget.ArrayAdapter<CharSequence> themeAdapter =
+                android.widget.ArrayAdapter.createFromResource(this,
+                        R.array.settings_theme_options,
+                        android.R.layout.simple_spinner_item);
+        themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        themeSpinner.setAdapter(themeAdapter);
+        themeSpinner.setSelection(app.settings().themeMode(), false);
+        themeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void onCheckedChanged(android.widget.CompoundButton buttonView, boolean isChecked) {
-                app.settings().setThemeMode(isChecked ? Settings.THEME_DARK : Settings.THEME_LIGHT);
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view,
+                                       int position, long id) {
+                if (position == app.settings().themeMode()) {
+                    return;
+                }
+                app.settings().setThemeMode(position);
+                // recreate() пересоздаёт активность с новым набором цветов: UiModeManager
+                // меняет ночной режим только к следующему созданию окна, поэтому одна
+                // смена флага без recreate() не даёт видимого эффекта (это и была
+                // причина «тема не переключается»).
                 app.applyTheme(SettingsActivity.this);
                 recreate();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
             }
         });
 

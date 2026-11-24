@@ -161,9 +161,30 @@ public final class VideoDecoder {
             int width = Math.max(1, cropRight - cropLeft + 1);
             int height = Math.max(1, cropBottom - cropTop + 1);
             Log.i(TAG, "Preview: видимый формат " + width + "×" + height);
+            FormatListener l = formatListener;
+            if (l != null) {
+                l.onVideoSize(width, height);
+            }
         } catch (Exception e) {
             // размеры опциональны
         }
+    }
+
+    /**
+     * Сообщает реальный размер декодированного кадра.
+     *
+     * SurfaceView сам растягивает картинку на всю свою площадь, поэтому чтобы превью
+     * не искажалось, размер SurfaceView подгоняется под пропорции кадра (в панораме
+     * это ландшафт, а не портрет экрана).
+     */
+    public interface FormatListener {
+        void onVideoSize(int width, int height);
+    }
+
+    private volatile FormatListener formatListener;
+
+    public void setFormatListener(FormatListener listener) {
+        this.formatListener = listener;
     }
 
     private static int getInt(MediaFormat format, String key, int def) {

@@ -165,11 +165,41 @@ public final class PanoramaActivity extends Activity {
      */
     private static final long LIVE_VIEW_WAIT_MS = 20000L;
 
+    /**
+     * Выбирает тему окна до его создания.
+     *
+     * setTheme() действует только до super.onCreate: после него окно уже оформлено, и
+     * смена темы на уже созданном окне не даёт видимого эффекта. Раньше applyTheme
+     * вызывался после super.onCreate, поэтому переключение тёмной/светлой темы
+     * «не срабатывало».
+     */
+    private void applyThemeBeforeWindow() {
+        try {
+            boolean dark;
+            int mode = app.settings().themeMode();
+            if (mode == com.panoluna.app.data.Settings.THEME_DARK) {
+                dark = true;
+            } else if (mode == com.panoluna.app.data.Settings.THEME_LIGHT) {
+                dark = false;
+            } else {
+                dark = (getResources().getConfiguration().uiMode
+                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            }
+            setTheme(dark ? com.panoluna.app.R.style.AppTheme
+                    : com.panoluna.app.R.style.AppTheme_Light);
+        } catch (Throwable ignored) {
+            // при любой ошибке остаётся тема из манифеста
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Тема применяется ДО super.onCreate: окно создаётся один раз, и если сменить
+        // тему после, оно остаётся с прежней — именно поэтому переключение не работало.
+        app = PanoLunaApp.get(getApplicationContext());
+        applyThemeBeforeWindow();
         super.onCreate(savedInstanceState);
-        app = PanoLunaApp.get(this);
-        app.applyTheme(this);
         appliedThemeMode = app.settings().themeMode();
         setContentView(R.layout.activity_panorama);
         preview = new MjpegPreview();
@@ -219,6 +249,21 @@ public final class PanoramaActivity extends Activity {
         previewSurface = findViewById(R.id.preview_surface);
         previewHolder = previewSurface.getHolder();
         videoDecoder = new VideoDecoder();
+        // Превью в ландшафтном формате (камера снимает 4:3 горизонтально), а экран
+        // телефона — вертикальный. SurfaceView растягивает картинку на всю площадь,
+        // поэтому подгоняем его размеры под пропорции кадра: подгонка по ширине,
+        // высота по соотношению сторон, центрирование. Без этого превью растянуто.
+        videoDecoder.setFormatListener(new VideoDecoder.FormatListener() {
+            @Override
+            public void onVideoSize(final int width, final int height) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        applyPreviewAspect(width, height);
+                    }
+                });
+            }
+        });
         previewHolder.addCallback(new android.view.SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(android.view.SurfaceHolder holder) {
@@ -345,6 +390,54 @@ public final class PanoramaActivity extends Activity {
         } catch (Throwable ignored) {
             // декодирование не должно ронять приложение
         }
+    }
+
+    /**
+     * Подгоняет SurfaceView превью под пропорции видео, не растягивая картинку.
+     *
+     * SurfaceView не умеет scaleType: он всегда заполняет свои размеры целиком.
+     * Поэтому считаем размеры сами: вписываем кадр в доступную область с сохранением
+     * пропорций (аналог fitCenter) и центрируем.
+     */
+    private void applyPreviewAspect(final int videoWidth, final int videoHeight) {
+        if (videoWidth <= 0 || videoHeight <= 0 || previewSurface == null) {
+            return;
+        }
+        final android.view.View parent = (android.view.View) previewSurface.getParent();
+        if (parent == null) {
+            return;
+        }
+        parent.post(new Runnable() {
+            @Override
+            public void run() {
+                int availWidth = parent.getWidth();
+                int availHeight = parent.getHeight();
+                if (availWidth <= 0 || availHeight <= 0) {
+                    return;
+                }
+                float videoAspect = (float) videoWidth / (float) videoHeight;
+                float areaAspect = (float) availWidth / (float) availHeight;
+                int targetWidth;
+                int targetHeight;
+                if (videoAspect > areaAspect) {
+                    // Кадр шире области: вписываем по ширине, по высоте остаётся запас.
+                    targetWidth = availWidth;
+                    targetHeight = Math.round(availWidth / videoAspect);
+                } else {
+                    // Кадр выше области: вписываем по высоте.
+                    targetHeight = availHeight;
+                    targetWidth = Math.round(availHeight * videoAspect);
+                }
+                android.widget.FrameLayout.LayoutParams params =
+                        (android.widget.FrameLayout.LayoutParams) previewSurface.getLayoutParams();
+                params.width = targetWidth;
+                params.height = targetHeight;
+                params.gravity = android.view.Gravity.CENTER;
+                previewSurface.setLayoutParams(params);
+                android.util.Log.i("PanoLuna", "Превью " + videoWidth + "×" + videoHeight
+                        + " -> " + targetWidth + "×" + targetHeight + " (без растяжения)");
+            }
+        });
     }
 
     private void startPreview() {

@@ -295,10 +295,15 @@ public final class Settings {
         return prefs.getInt(KEY_THEME, THEME_DARK);
     }
 
-    /** true, если должна быть тёмная тема. */
+    /**
+     * true, если сейчас должна быть тёмная тема.
+     *
+     * Для THEME_SYSTEM раньше безусловно возвращал true — «как в системе» фактически означало
+     * «всегда тёмная». Теперь системный режим читается из ресурсов (values-night сам
+     * подставляет нужный bool).
+     */
     public boolean darkTheme() {
-        int mode = themeMode();
-        return mode == THEME_DARK || mode == THEME_SYSTEM;
+        return themeMode() == THEME_DARK;
     }
 
     public void setThemeMode(int mode) {

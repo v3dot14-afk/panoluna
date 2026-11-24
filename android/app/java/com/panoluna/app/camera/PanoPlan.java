@@ -197,6 +197,15 @@ public final class PanoPlan {
      * Шаблон PTGui: 24 точки с yaw/pitch, прямолинейная оптика и измеренное поле зрения.
      * Изображения не включены: PTGui применяет параметры по индексу к загруженным фото.
      */
+    /** Приводит yaw к диапазону 0..360: гимбал ходит до +235, PTGui ждёт полный оборот. */
+    static float normalizeYaw(float yaw) {
+        float value = yaw % 360f;
+        if (value < 0f) {
+            value += 360f;
+        }
+        return value;
+    }
+
     public String toPtGuiTemplate(String name) {
         StringBuilder sb = new StringBuilder();
         sb.append("# ptGui project file\r\n\r\n");
@@ -287,19 +296,96 @@ public final class PanoPlan {
         sb.append("p w27654 h13827 f2 v360 u20 n\"JPEG g0 q95\"\r\n");
         sb.append("m g1 i0\r\n");
         sb.append("\r\n# input images:\r\n");
+        // Один 'o'-ряд на кадр, в порядке съёмки. Ряды идут строго по порядку файлов
+        // на карте: PTGui сопоставляет их по индексу, поэтому никаких «пустых» строк
+        // между ними быть не должно (старый вариант добавлял dummy-картинку, из-за
+        // чего индексы съезжали).
         for (Shot s : shots) {
-            sb.append("o f0 y").append(fmt(s.pan)).append(" r0 p").append(fmt(s.tilt))
+            // yaw нормализуется в 0..360: у гимбала ход до +235, PTGui ждёт угол
+            // в пределах полного оборота и на 235 молча не строит проект верно.
+            sb.append("o f0 y").append(fmt(normalizeYaw(s.pan)))
+                    .append(" r0 p").append(fmt(s.tilt))
                     .append(" v").append(MEASURED_HFOV_DEG)
                     .append(" a0 b0 c0 d0 e0 g0 t0\r\n");
         }
-        sb.append("\r\n# демо-изображение заменяется PTGui первой загруженной фото:\r\n");
-        sb.append("#-dummyimage\r\n");
-        sb.append("o w1 h1 y0 r0 p0 v").append(MEASURED_HFOV_DEG)
-                .append(" a0 b0 c0 f2 d0 e0 g0 t0\r\n");
-        sb.append("\r\n# Control points:\r\n\r\n");
-        sb.append("# optimizer:\r\n");
+        // Контрольные точки ставятся ПАРАМИ между соседними кадрами по сетке.
+        // Без них PTGui не находит соответствия сам на однородных сценах (небо, стены),
+        // и «Create panorama» отказывается строить. Пары дают оптимизатору опору,
+        // дальше PTGui дополняет их автопоиском.
+        //
+        // Точки берутся в центре перекрытия: по горизонтали между соседними столбцами,
+        // по вертикали — по строкам. Нормализованные координаты PTGui: x/ширина.
+        sb.append("\r\n# Control points:\r\n");
+        List<Shot> ordered = shots;
+        int rows = this.rows;
+        int columns = this.columns;
+        for (int i = 0; i < ordered.size(); i++) {
+            Shot a = ordered.get(i);
+            int row = a.row;
+            int col = a.column;
+            // Сосед справа по строке (для нечётных строк — в порядке змейки).
+            if (col + 1 < columns) {
+                Shot b = findShot(row, col + 1);
+                if (b != null) {
+                    appendHorizontalPair(sb, a, b);
+                }
+            }
+            // Сосед сверху: там перекрытие по вертикали (37%).
+            Shot up = findShot(row + 1, col);
+            if (up != null) {
+                appendVerticalPair(sb, a, up);
+            }
+        }
+        sb.append("\r\n# optimizer:\r\n");
         sb.append("v v d e r1 p1 d2 e2 y2 r2 p2\r\n");
         return sb.toString();
+    }
+
+    private Shot findShot(int row, int column) {
+        for (Shot s : shots) {
+            if (s.row == row && s.column == column) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Пара контрольных точек между кадрами одной строки.
+     *
+     * Точки ставятся в геометрическом центре перекрытия: по x это половина пути между
+     * краями кадров. PTGui ожидает нормализованные координаты (0..1).
+     */
+    private void appendHorizontalPair(StringBuilder sb, Shot a, Shot b) {
+        int ia = shots.indexOf(a);
+        int ib = shots.indexOf(b);
+        // Центр перекрытия по горизонтали: около 0.5 у левого кадра и 0.5 у правого
+        // при шаге 58.4 и HFOV 77.7 перекрытие 25% — точка попадает в общую зону.
+        appendPair(sb, ia, 0.62f, 0.5f, ib, 0.38f, 0.5f);
+    }
+
+    /** Пара контрольных точек между кадрами соседних строк: перекрытие 37% по вертикали. */
+    private void appendVerticalPair(StringBuilder sb, Shot a, Shot b) {
+        int ia = shots.indexOf(a);
+        int ib = shots.indexOf(b);
+        // По вертикали общая зона шире: точка ближе к краю, но внутри перекрытия.
+        appendPair(sb, ia, 0.5f, 0.66f, ib, 0.5f, 0.34f);
+    }
+
+    private void appendPair(StringBuilder sb, int indexA, float xa, float ya,
+                            int indexB, float xb, float yb) {
+        // Формат строки PTGui: c nN xX yY X Y tG
+        // nN — номер изображения (с нуля), xX/yY — точка в первом, X/Y — во втором.
+        sb.append("c n").append(indexA).append(" x").append(fmt4(xa)).append(" y")
+                .append(fmt4(ya)).append(" X").append(fmt4(xb)).append(" Y")
+                .append(fmt4(yb)).append(" t0\r\n");
+        sb.append("c n").append(indexA).append(" x").append(fmt4(xa)).append(" y")
+                .append(fmt4(ya)).append(" X").append(fmt4(xb)).append(" Y")
+                .append(fmt4(yb)).append(" t1 n").append(indexB).append("\r\n");
+    }
+
+    private static String fmt4(float value) {
+        return String.format(java.util.Locale.US, "%.4f", value);
     }
 
     /** XML Papywizard: альтернатива, которую PTGui импортирует через File > Import Papywizard. */

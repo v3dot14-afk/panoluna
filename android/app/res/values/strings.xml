@@ -117,8 +117,13 @@
     <!-- Настройки приложения -->
     <string name="settings_title">Настройки</string>
     <string name="settings_appearance">Внешний вид</string>
-    <string name="settings_theme_dark">Тёмная тема</string>
-    <string name="settings_theme_desc">Переключение между тёмной и светлой темой</string>
+    <string name="settings_theme_dark">Тема оформления</string>
+    <string name="settings_theme_desc">Тёмная, светлая или как в системе</string>
+    <string-array name="settings_theme_options">
+        <item>Тёмная</item>
+        <item>Светлая</item>
+        <item>Как в системе</item>
+    </string-array>
     <string name="settings_camera">Камера</string>
     <string name="settings_host">IP-адрес</string>
     <string name="settings_port">Порт</string>
