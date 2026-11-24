@@ -446,15 +446,23 @@ public final class PanoramaActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (!liveViewActive()) {
-                    long deadline = System.currentTimeMillis() + LIVE_VIEW_WAIT_MS;
-                    while (System.currentTimeMillis() < deadline && !liveViewActive()) {
-                        try {
-                            Thread.sleep(100L);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
+                // Ждём кадр live-view. Если за 6 с не пришёл — перезапускаем стрим
+                // (объявление разворачивания + START): камера ack'ает START на всё, ack не
+                // гарантирует, что стрим пошёл. Гимбал и съёмка работают ТОЛЬКО при реальном
+                // стриме — без кадра панорама замерзнет в активном положении.
+                int retries = 0;
+                long deadline = System.currentTimeMillis() + LIVE_VIEW_WAIT_MS;
+                while (System.currentTimeMillis() < deadline && !liveViewActive()) {
+                    try {
+                        Thread.sleep(600L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    if (!liveViewActive() && retries < 3) {
+                        retries++;
+                        log("Live-view: кадра нет, перезапускаю стрим (попытка " + retries + ")");
+                        retryLiveStream();
                     }
                 }
                 final boolean ok = liveViewActive();
@@ -463,7 +471,7 @@ public final class PanoramaActivity extends Activity {
                     public void run() {
                         try {
                             if (!ok) {
-                                log("Live-view не подтвердился кадром: старт всё равно отдан");
+                                log("Live-view не подтвердился кадром после retry: старт всё равно отдан");
                             }
                             app.shooter().start(PanoPlan.shot24());
                         } catch (Throwable t) {
@@ -511,6 +519,30 @@ public final class PanoramaActivity extends Activity {
             });
         } catch (Throwable t) {
             log("Live-stream TCP недоступен: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Повторно отправляет объявление разворачивания + START_LIVE_STREAM (обходит guard
+     * startStreamFallback): если первый START не привёл к кадру, гимбал и съёмка не
+     * сработают — стрим должен реально идти. Используется gate'ом для retry.
+     */
+    private void retryLiveStream() {
+        try {
+            app.camera().enterLiveView(new com.panoluna.app.camera.CameraClient.Callback<Boolean>() {
+                @Override
+                public void onResult(Boolean value) {
+                    log("Live-stream retry: START отправлен"
+                            + (value != null && value ? ", подтверждён" : ", без подтверждения"));
+                }
+
+                @Override
+                public void onError(String message) {
+                    log("Live-stream retry: " + message);
+                }
+            });
+        } catch (Throwable t) {
+            log("Live-stream retry: " + t.getMessage());
         }
     }
 

@@ -306,25 +306,18 @@ public final class CameraClient {
     }
 
     /**
-     * Перезапускает стрим live view: STOP, затем START (с объявлением разворачивания).
+     * Перезапускает стрим live view: повторная отправка объявления разворачивания + START.
      *
-     * Критичен для стоп-запуска панорамы: снимок фото проходит через ту же цепочку, что
-     * держит стрим. Если после TAKE_PICTURE стрим сломлен, камера зависает в
-     * SINGLE_SHOOTING и не выходит, а гимбал двигается ТОЛЬКО при активном стриме —
-     * команды acknowledged, но гимбал не двигается (freeze). Перезапуск стрима
-     * разблокирует камеру и восстанавливает стрим для следующего движения.
-     * Как drainCamera() в TimelapseEngine оригинала.
+     * Безопасная разблокировка: не останавливает стрим (STOP_LIVE_STREAM рискует убить
+     * работающий стрим — ложный restart ломал панораму в v1.16.9), а переотправляет
+     * объявление + START. Если стрим был включён — безвременен; если выключен/сломан —
+     * восстанавливает. Разблокирует камеру, зависшую в SINGLE_SHOOTING, как
+     * ensureRunningForCapture() в PreviewController оригинала.
      */
     public void restartLiveView() {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                try {
-                    connection.request(ProtoCodes.STOP_LIVE_STREAM, new byte[0],
-                            settings.getRequestTimeoutMs()).get();
-                } catch (final Exception e) {
-                    // остановка — best-effort; даже если не ответила, запускаем
-                }
                 try {
                     connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
                             Messages.setAccessCameraFileState(5));

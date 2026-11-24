@@ -210,6 +210,7 @@ public final class PanoShooter {
         // раз, затем замерает). Best-effort.
         camera.announceLiveView();
         // Поворот гимбала по схеме: GIMBAL_CONTROL, вектор скорости к точке плана.
+        long moveStart = System.currentTimeMillis();
         gimbal.driveTo(shot.pan, shot.tilt, 30_000L, camera, new Gimbal.Callback() {
             @Override
             public void onDone(boolean value) {
@@ -226,8 +227,11 @@ public final class PanoShooter {
                 Thread.currentThread().interrupt();
             }
         }
-        if (!reached[0]) {
-            log("Гимбал не достиг точки: фото делается всё равно");
+        long moveMs = System.currentTimeMillis() - moveStart;
+        if (reached[0]) {
+            log("Гимбал достиг точки " + shot.label() + " за " + moveMs + " мс");
+        } else {
+            log("Гимбал НЕ достиг точки " + shot.label() + " за " + moveMs + " мс: фото всё равно");
         }
         // Гимбал должен быть неподвижен в момент съёмки: даём короткий интервал успокоения.
         sleep(350L);
@@ -272,6 +276,7 @@ public final class PanoShooter {
             shot.uri = uri[0];
         }
         publishShot(cursor, shot.uri, shot.pan, shot.tilt);
+        log("Снимок " + (cursor + 1) + (uri[0] != null ? " принят" : " (без URI)"));
         // Дождаться завершения записи перед движением гимбала к следующей точке.
         // Если камера зависла в SINGLE_SHOOTING (снимок фото проходит через цепочку
         // стрима — при сломленном стриме не закрывается), awaitCaptureIdle не дождётся:
@@ -307,7 +312,9 @@ public final class PanoShooter {
                 }
             }
             captureIdle = idle[0];
-            if (!captureIdle) {
+            if (captureIdle) {
+                log("Камера свободна: движение к следующей точке");
+            } else {
                 log("Камера занята (SINGLE_SHOOTING): перезапускаю стрим для разблокировки");
                 camera.restartLiveView();
                 sleep(1200L);
