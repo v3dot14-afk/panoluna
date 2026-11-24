@@ -84,6 +84,10 @@ public final class Smoke {
         PanoPlan plan = PanoPlan.shot24();
         check(plan.size() == 24, "24 кадра");
         check(plan.getRows() == 4 && plan.getColumns() == 6, "4x6");
+        check(Math.abs(plan.getPanStep() - 58.4f) < 0.01f,
+                "pan step соответствует полному физическому ходу 58.4°");
+        check(plan.getOverlapPercent() == 25,
+                "перекрытие рассчитано по фактическому шагу и FOV (25%)");
         float[] tilts = new float[4];
         for (PanoPlan.Shot s : plan.shots()) tilts[s.row] = s.tilt;
         // tilt от -58.9 до +58.9: каждый ряд покрывает +-31.15, значит нижний ряд

@@ -3,16 +3,15 @@ package com.panoluna.app.camera;
 import com.panoluna.app.data.Settings;
 
 /**
- * Il gimbal della Luna Ultra: movimento a velocita' e navigazione a stima.
+ * Управление гимбалом Luna Ultra вектором скорости и оценка его позиции.
  *
- * La camera NON restituisce la posizione del gimbal. Non c'e' notifica PTZ decodificabile,
- * non c'e' il pan nella coda del file, non c'e' negli EXIF. Quindi la posizione si stima:
- * {@code posizione += velocita * tempo}, con la velocita' nominale di catalogo corretta dal
- * fattore misurato (il gimbal si muove circa 1,235 volte quanto comandato).
+ * Камера не предоставляет подтверждённые координаты pan/tilt. Поэтому класс оценивает
+ * положение интегрированием отправленных скоростей по времени (dead reckoning), с поправкой
+ * на измеренную скорость. {@link #driveTo} достигает расчётной точки, а не считывает
+ * физическое положение с датчика.
  *
- * Il comando e' un vettore continuo: si comanda una velocita' e il motore la mantiene finche'
- * non arriva il vettore nullo. Per questo la lente della UI manda il vettore a 40 Hz e il
- * rilascio marca lo stop.
+ * Вектор сохраняется до команды остановки; после неудачной отправки позиция не интегрируется.
+ * Команды движения выполняются планировщиком панорамы, отдельного джойстика в интерфейсе нет.
  */
 public final class Gimbal {
 
@@ -78,7 +77,6 @@ public final class Gimbal {
         }
     }
 
-    /** Comanda una velocita' (-1..1) e aggiorna la stima. */
     /**
      * Отправляет вектор скорости и интегрирует движение ТОЛЬКО если он реально ушёл.
      *

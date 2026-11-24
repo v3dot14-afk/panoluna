@@ -19,15 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Unica istanza dell'app: impostazioni, connessione alla camera, gimbal e macchina della
- * panoramica. Le activity le prendono da qui, cosi' lo stato sopravvive al cambio di schermata.
+ * Контейнер состояния приложения: настройки, TCP-соединение, клиент камеры, гимбал
+ * и планировщик панорамы. Activity получают общие экземпляры отсюда.
  *
- * La rete della camera non ha Internet: il socket di controllo e l'anteprima HTTP devono essere
- * legati alla Wi-Fi corrente e la rete mantenuta registrata via NetworkRequest, altrimenti
- * Android la lascia e la connessione a 192.168.42.1 cade (vedi PROTOCOL.md e il riferimento
- * persoft/lunaultra). L'utente si collega alla Wi-Fi della camera manualmente; qui la si
- * cerca, la si lega al socket e la si pianta.
+ * Пользователь подключает телефон к Wi-Fi камеры вручную. Приложение находит активную
+ * Wi-Fi-сеть без интернета, удерживает её зарегистрированной и привязывает к ней TCP-сокет;
+ * иначе Android может направить запросы камеры через мобильную сеть. Этот класс не
+ * управляет сохранением изображений и не меняет параметры качества фото.
  */
+
 public final class PanoLunaApp extends Application {
 
     private static final String TAG = "PanoLuna";

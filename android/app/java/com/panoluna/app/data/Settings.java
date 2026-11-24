@@ -4,10 +4,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 /**
- * Impostazioni dell'app, persistite in SharedPreferences.
+ * Настройки приложения в локальном {@link SharedPreferences}.
  *
- * La password del Wi-Fi della camera viene ricordata qui: e' quello che permette di connettersi
- * senza reinserirla a ogni volta. In Impostazioni c'e l'interruttore per cancellarla.
+ * Здесь хранятся адрес камеры, параметры оценки движения гимбала, тема и язык.
+ * Пароль Wi-Fi и настройки качества фотографий приложение не сохраняет. clearAll()
+ * очищает только эти локальные предпочтения и не отправляет команд камере.
  */
 public final class Settings {
 

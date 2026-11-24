@@ -20,14 +20,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Sessione di controllo UCD2: handshake, keep-alive e correlazione richiesta/risposta.
+ * TCP-транспорт протокола UCD2: hello/keep-alive, чтение фреймов и сопоставление
+ * ответов с запросами.
  *
- * Due dettagli del protocollo non sono intuitivi:
- * - la sessione si autorizza inviando il frame di stream hello, non un comando;
- * - a correlare risposta e richiesta e' il requestId dell'intestazione di comando, non il seq.
- *
- * La camera accetta una sola connessione di controllo alla volta: se l'app Insta360 ufficiale
- * e' attiva, chiude questa connessione.
+ * Ответ связывается с командой по {@code requestId}, не по sequence number. Чтение сокета
+ * выполняет отдельный поток; MEDIA-фреймы передаются слушателю отдельно от ответов команд.
+ * Камера допускает одну управляющую сессию, поэтому перед подключением нужно закрыть
+ * официальное приложение Insta360. Класс не определяет, была ли команда применена камерой:
+ * он доставляет полученный фрейм вызывающему коду.
  */
 public final class CameraConnection {
 

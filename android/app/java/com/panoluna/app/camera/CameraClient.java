@@ -14,8 +14,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * I comandi della camera, compositi sui messaggi protobuf reali del namespace
- * {@code insta360.messages}, con callback sul thread principale.
+ * Высокоуровневые команды камере и разбор ответов протокола {@code insta360.messages}.
+ *
+ * Операции с I/O выполняются в пуле потоков, callback возвращаются в UI-поток. Ответ камеры
+ * сам по себе не подтверждает, что настройка применена: для ряда команд прошивка отвечает
+ * одинаковым кодом. В частности, статус режима/скорости по отдельному запросу не читается.
+ * Настройки разрешения, RAW, экспозиции, баланса белого и зума этой версией не изменяются.
  */
 public final class CameraClient {
 
@@ -192,25 +196,19 @@ public final class CameraClient {
     }
 
     /**
-     * Поставить камеру в live view (START_LIVE_STREAM).
+     * Запускает live-view через TCP-команду START_LIVE_STREAM.
      *
-     * Гимбал отвечает только во время трансляции preview: без этой последовательности
-     * команды гимбала игнорируются. START_LIVE_STREAM запускает трансляцию видео по
-     * TCP (фреймы MEDIA уже читает ридер коннекции).
-     *
-     * Перед START отправляется SET_ACCESS_CAMERA_FILE_STATE(LIVE_VIEW=5) = [0x08 0x05]
-     * — best-effort, как в референсе Ripwords/insta360-luna-ultra-desktop (liveview.rs,
-     * send_start). С некоторого firmware камера складывается при подключении приложения
-     * и остаётся сложенной через START_LIVE_STREAM: только это объявление разворачивает
-     * её. Без него гимбал остаётся запертым — вот почему гимбал не отвечал.
+     * Перед START текущая реализация best-effort отправляет SET_ACCESS_CAMERA_FILE_STATE
+     * с LIVE_VIEW=5. Влияние этой предварительной команды зависит от прошивки и состояния
+     * камеры и не подтверждено этим методом. Успешный ответ START также не гарантирует
+     * поступление видео: наличие первого кадра проверяет вызывающий код.
      */
     public void enterLiveView(final Callback<Boolean> callback) {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Объявление live-view. ОТПРАВЛЯЕТСЯ ОДИН РАЗ и ожидается ответ: в рабочем
-                // probe Ripwords 118 идёт как request с ожиданием, затем START — иначе
-                // гонка, и камера не успевает войти в live-view до стрима.
+                // Best-effort объявление состояния перед START. Ожидание ответа сохраняет
+                // порядок запросов; отказ не блокирует запуск TCP live-stream.
                 try {
                     connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
                             Messages.setAccessCameraFileState(5),
@@ -243,21 +241,12 @@ public final class CameraClient {
     }
 
     /**
-     * Объявление live-view + START: пара 118 → START, как в официальном приложении.
-     *
-     * Подтверждено на устройстве 2026-11-07 (Ripwords PROTOCOL-GAP.md): свежая прошивка
-     * СКЛАДЫВАЕТ камеру при подключении приложения, и голый START_LIVE_STREAM её больше
-     * не разворачивает — нужен 118 с LIVE_VIEW(5) перед КАЖДЫМ START. При этом 118
-     * отправляется именно перед START, а НЕ перед каждым движением гимбала: на активном
-     * стриме лишний 118 ломает движение (регрессия v1.16.7).
-     */
-    /**
      * Разблокирует камеру, зависшую в состоянии съёмки.
      *
-     * Снимок 48 МП проходит через ту же цепочку, что держит стрим live-view. Если
-     * камера не закрыла цикл (наблюдали зависание на 3-м кадре: статус «занято»
-     * дольше 25 с при реальном времени записи ~5 с), повторный START_LIVE_STREAM
-     * восстанавливает цепочку и отпускает состояние. Тот же приём, что
+     * Снимок в выбранном на камере режиме проходит через ту же цепочку, что держит
+     * live-view. Если камера не закрыла цикл захвата (статус остаётся «занято» дольше
+     * заданного таймаута), повторный START_LIVE_STREAM может восстановить цепочку.
+     * Это best-effort приём; он не подтверждает целостность записанного файла. Тот же приём, что
      * ensureRunningForCapture() в PreviewController эталона.
      */
     public void recoverFromStuckCapture() {
@@ -325,6 +314,7 @@ public final class CameraClient {
         }
     }
 
+    /** Best-effort объявление LIVE_VIEW и запуск TCP live-stream; кадр проверяется отдельно. */
     public void announceLiveView() {
         io.execute(new Runnable() {
             @Override
@@ -348,20 +338,16 @@ public final class CameraClient {
     }
 
     /**
-     * Перезапускает стрим live view: повторная отправка объявления разворачивания + START.
-     *
-     * Безопасная разблокировка: не останавливает стрим (STOP_LIVE_STREAM рискует убить
-     * работающий стрим — ложный restart ломал панораму в v1.16.9), а переотправляет
-     * объявление + START. Если стрим был включён — безвременен; если выключен/сломан —
-     * восстанавливает. Разблокирует камеру, зависшую в SINGLE_SHOOTING, как
-     * ensureRunningForCapture() в PreviewController оригинала.
+     * Повторно отправляет объявление LIVE_VIEW и START без предварительного STOP.
+     * Используется как best-effort восстановление; фактическое возобновление видеокадров
+     * и управления гимбалом этим методом не подтверждается.
      */
     public void restartLiveView() {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Пара 118 → START, как требует свежая прошивка: складённую камеру голый
-                // START не разворачивает. STOP не шлём — он убивает работающий стрим.
+                // Сначала best-effort объявление LIVE_VIEW, затем START. STOP не отправляем,
+                // чтобы не прерывать уже работающий стрим; результат по кадрам проверяется отдельно.
                 try {
                     connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
                             Messages.setAccessCameraFileState(5),
@@ -382,11 +368,12 @@ public final class CameraClient {
     }
 
     /**
-     * Установить режим фото: photo_sub_mode.
+     * Отправляет SET_OPTIONS для photo_sub_mode.
      *
-     * SINGLE (0) — обычный одиночный кадр (для 24-кадровой панорамы на компьютер).
-     * INSTA_PANO (8) — встроенный панорамный режим камеры (19 кадров + встроенная
-     * сшивка), который не используется для внешней сшивки.
+     * SINGLE (0) — обычный кадр, используемый для внешней 24-кадровой сшивки.
+     * INSTA_PANO (8) включает отдельный встроенный режим камеры; приложение его не вызывает.
+     * Boolean callback означает только, что пришёл ответ, а не что состояние было прочитано
+     * обратно и независимо подтверждено.
      */
     public void setPhotoSubMode(final int subMode, final Callback<Boolean> callback) {
         run(ProtoCodes.SET_OPTIONS,
@@ -400,12 +387,11 @@ public final class CameraClient {
     }
 
     /**
-     * Aspetta che la camera abbia finito di salvare, prima di muovere il gimbal.
+     * Ожидает, пока камера освободится после записи принятого кадра.
      *
-     * Il comando di scatto risponde appena la camera lo accetta, non quando il file e' sulla
-     * scheda: fra le due cose passano piu' di due secondi su una foto da otto megapixel. Chi
-     * scatta una sequenza e va avanti sulla risposta chiede lo scatto successivo mentre il
-     * precedente si sta ancora scrivendo, e la camera lo lascia cadere senza dirlo.
+     * Ответ TAKE_PICTURE приходит раньше завершения записи файла. Время записи зависит
+     * от режима и настроек камеры; перед следующим кадром нужно отдельно дождаться
+     * завершения захвата, иначе кадр может быть потерян.
      */
     public void awaitCaptureIdle(final long timeoutMs, final Callback<Boolean> callback) {
         io.execute(new Runnable() {
@@ -493,6 +479,10 @@ public final class CameraClient {
                 }, callback);
     }
 
+    /**
+     * Задаёт аппаратный уровень скорости гимбала. Ответ протокола не является чтением
+     * фактического уровня; в штатной панораме запрашивается уровень 3.
+     */
     public void setGimbalSpeed(final int level, final Callback<Boolean> callback) {
         run(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS, Messages.setGimbalSpeed(level),
                 settings.getRequestTimeoutMs(), new ValueReader<Boolean>() {

@@ -3,10 +3,11 @@ package com.panoluna.app.proto;
 import java.util.List;
 
 /**
- * Composizione dei corpi protobuf dei comandi e lettura delle risposte.
+ * Чистые функции для protobuf payload: сериализация аргументов команд и разбор ответов.
  *
- * Funzioni pure: byte in uscita, nessuna sessione. I corpi sono gli stessi osservati nel
- * traffico tra l'app Insta360 e la Luna Ultra.
+ * Методы только формируют/читают байты — сами ничего не отправляют и не меняют на камере.
+ * Фактические сетевые вызовы находятся в {@code CameraClient}; перед добавлением нового
+ * setter нужно проверить его реальные call sites и семантику ответа прошивки.
  */
 public final class Messages {
 
