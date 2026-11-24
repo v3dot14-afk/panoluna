@@ -29,7 +29,7 @@ Android Studio не нужна: доступного Android SDK нет, поэ�
 которую Gradle применяет, просто выстроена вручную.
 
 ```bash
-bash android/build.sh      # создаёт ../dist/PanoLuna.apk
+bash android/build.sh      # создаёт ../dist/PanoLuna-<версия>.apk
 bash android/test.sh       # проверяет UCD2-кодек, protobuf, план панорамы, экспорт
 ```
 

@@ -22,6 +22,13 @@ TOOLS="$ROOT/tools"
 OUT="$ROOT/out"
 DIST="$ROOT/../dist"
 
+# Версия для имени APK: PanoLuna-<versionName>.apk (из манифеста).
+VERSION="$(sed -n 's/.*android:versionName="\([^"]*\)".*/\1/p' "$APP/AndroidManifest.xml" | head -1)"
+if [ -z "$VERSION" ]; then
+    VERSION="dev"
+fi
+APK_NAME="PanoLuna-${VERSION}.apk"
+
 AAPT2="$TOOLS/aapt2"
 ANDROID_JAR="$TOOLS/android.jar"
 D8="$TOOLS/d8.jar"
@@ -151,15 +158,15 @@ mkdir -p "$DIST"
     --ks-key-alias androiddebugkey \
     --key-pass pass:android \
     --v1-signing-enabled false \
-    --out "$DIST/PanoLuna.apk" \
+    --out "$DIST/$APK_NAME" \
     "$OUT/app-unaligned.apk"
 
 log "verify"
-"$JAVA" -jar "$APKSIGNER" verify "$DIST/PanoLuna.apk"
+"$JAVA" -jar "$APKSIGNER" verify "$DIST/$APK_NAME"
 
 log "badging"
-BADGING="$("$AAPT2" dump badging "$DIST/PanoLuna.apk" 2>/dev/null)"
+BADGING="$("$AAPT2" dump badging "$DIST/$APK_NAME" 2>/dev/null)"
 printf '%s\n' "$BADGING" | sed -n '1,8p'
 
-log "Fatto: $DIST/PanoLuna.apk"
-ls -la "$DIST/PanoLuna.apk"
+log "Fatto: $DIST/$APK_NAME"
+ls -la "$DIST/$APK_NAME"
