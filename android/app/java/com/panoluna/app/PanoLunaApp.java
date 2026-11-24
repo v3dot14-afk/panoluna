@@ -55,6 +55,73 @@ public final class PanoLunaApp extends Application {
     private final List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
     private volatile VideoFrameListener videoFrameListener;
 
+    // ---------------------------------------------------------------------
+    // Блокировки на время панорамы.
+    //
+    // Панорама идёт 3 минуты. Без этих блокировок Android через 30 с гасит экран,
+    // приложение уходит в фон и отключает Wi-Fi для экономии — камера теряется
+    // ровно посередине съёмки (наблюдалось заказчиком). Три блокировки закрывают
+    // три разные причины потери:
+    //   PARTIAL_WAKE_LOCK — не даёт уснуть процессору;
+    //   WifiLock (FULL_HIGH_PERF) — не даёт отключить Wi-Fi;
+    //   KEEP_SCREEN_ON — не даёт погаснуть экрану (Activity-флаг, без разрешений).
+    // ---------------------------------------------------------------------
+    private android.os.PowerManager.WakeLock panoWakeLock;
+    private android.net.wifi.WifiManager.WifiLock panoWifiLock;
+
+    /** Включает блокировки на время съёмки. Вызывать при старте панорамы. */
+    public void acquirePanoLocks() {
+        try {
+            if (panoWakeLock == null) {
+                android.os.PowerManager pm =
+                        (android.os.PowerManager) getSystemService(POWER_SERVICE);
+                if (pm != null) {
+                    panoWakeLock = pm.newWakeLock(
+                            android.os.PowerManager.PARTIAL_WAKE_LOCK, "PanoLuna:pano");
+                    panoWakeLock.setReferenceCounted(false);
+                }
+            }
+            if (panoWakeLock != null && !panoWakeLock.isHeld()) {
+                panoWakeLock.acquire(20 * 60 * 1000L);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "WakeLock не получен: " + t.getMessage());
+        }
+        try {
+            if (panoWifiLock == null) {
+                android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager)
+                        getApplicationContext().getSystemService(WIFI_SERVICE);
+                if (wm != null) {
+                    panoWifiLock = wm.createWifiLock(
+                            android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                            "PanoLuna:wifi");
+                    panoWifiLock.setReferenceCounted(false);
+                }
+            }
+            if (panoWifiLock != null && !panoWifiLock.isHeld()) {
+                panoWifiLock.acquire();
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "WifiLock не получен: " + t.getMessage());
+        }
+    }
+
+    /** Снимает блокировки. Вызывать при завершении/остановке панорамы. */
+    public void releasePanoLocks() {
+        try {
+            if (panoWakeLock != null && panoWakeLock.isHeld()) {
+                panoWakeLock.release();
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            if (panoWifiLock != null && panoWifiLock.isHeld()) {
+                panoWifiLock.release();
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     /**
      * Очередь кадров прямого эфира и единственный поток-декодер.
      *

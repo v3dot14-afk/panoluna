@@ -317,6 +317,8 @@ public final class PanoramaActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        // Страховка: если активность ушла в фон, блокировки не должны висеть.
+        app.releasePanoLocks();
         app.removeConnectionListener(connectionListener);
         preview.stop();
     }
@@ -575,9 +577,51 @@ public final class PanoramaActivity extends Activity {
         }
     }
 
+    /**
+     * Просит систему не оптимизировать батарею для этого приложения.
+     *
+     * На части прошивок (Xiaomi, Huawei, Samsung) агрессивная экономия отключает Wi-Fi
+     * даже вопреки WifiLock, и камера теряется посередине панорамы. Один системный
+     * запрос снимает это. Спрашиваем один раз: повторный показ раздражает.
+     */
+    private void requestIgnoreBatteryOptimization() {
+        try {
+            if (batteryPromptShown) {
+                return;
+            }
+            android.os.PowerManager pm =
+                    (android.os.PowerManager) getSystemService(POWER_SERVICE);
+            if (pm == null || pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                return;
+            }
+            batteryPromptShown = true;
+            android.content.Intent intent = new android.content.Intent(
+                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Throwable t) {
+            // на части прошивок экрана нет — блокировки уже держат сессию
+        }
+    }
+
+    private boolean batteryPromptShown;
+
     private void applyState(PanoShooter.State state) {
         boolean running = state == PanoShooter.State.RUNNING;
         boolean paused = state == PanoShooter.State.PAUSED;
+
+        // Пока идёт съёмка — держим экран включённым, процессор и Wi-Fi разбуженными.
+        // Панорама идёт ~3 минуты; без этого Android гасит экран через 30 с, уходит в
+        // фон и отключает Wi-Fi, и камера теряется посередине съёмки.
+        boolean active = running || paused;
+        if (active) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            app.acquirePanoLocks();
+            requestIgnoreBatteryOptimization();
+        } else {
+            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            app.releasePanoLocks();
+        }
         startButton.setEnabled(!running && !paused);
         pauseButton.setEnabled(running);
         resumeButton.setEnabled(paused);
