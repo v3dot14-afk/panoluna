@@ -401,7 +401,7 @@ public final class PanoramaActivity extends Activity {
             previewOff.setText(reason == null
                     ? getString(R.string.main_preview_off) : reason);
             connectButton.setColorFilter(Color.rgb(0x9A, 0xA0, 0xA6));
-            // La prossima connessione riavvia la live view da zero.
+            // При следующем подключении live view запускается заново.
             liveViewStarted = false;
             streamStarted = false;
         }
@@ -425,9 +425,10 @@ public final class PanoramaActivity extends Activity {
         }
         liveViewStarted = true;
         previewFrames = false;
-        // Gate гимбала и съёмки: TCP-поток START_LIVE_STREAM, всегда.
-        startStreamFallback();
-        // Картинка: OSC-MJPEG (если доступен), иначе TCP-поток через декодёр.
+        // Live-view взаимоисключающий, как в оригинале: пробуем OSC-MJPEG первым —
+        // активный MJPEG сам открывает gate гимбала (референс: ready = previewActive).
+        // Если MJPEG недоступен — фалбэк в TCP-поток START_LIVE_STREAM. Оба потока сразу
+        // не запускаем: в оригинале это взаимоисключающе, совмещение ломает ответ гимбала.
         startPreview();
     }
 
