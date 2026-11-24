@@ -55,6 +55,51 @@ public final class PanoLunaApp extends Application {
     private final List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
     private volatile VideoFrameListener videoFrameListener;
 
+    /**
+     * Очередь кадров прямого эфира и единственный поток-декодер.
+     *
+     * Декодирование нельзя делать в потоке чтения сокета: оно блокирующее, и пока оно
+     * работает, TCP не читается — камера рвёт сессию. Кадры старым вытесняются: показать
+     * устаревший кадр хуже, чем пропустить (превью, а не запись).
+     */
+    private final java.util.concurrent.ArrayBlockingQueue<byte[]> videoQueue =
+            new java.util.concurrent.ArrayBlockingQueue<byte[]>(8);
+    private Thread videoThread;
+
+    private void enqueueVideoFrame(byte[] annexB) {
+        if (!videoQueue.offer(annexB)) {
+            videoQueue.poll();
+            videoQueue.offer(annexB);
+        }
+        if (videoThread == null) {
+            synchronized (videoQueue) {
+                if (videoThread == null) {
+                    videoThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (true) {
+                                try {
+                                    byte[] frame = videoQueue.take();
+                                    VideoFrameListener l = videoFrameListener;
+                                    if (l != null) {
+                                        l.onVideoFrame(frame);
+                                    }
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                    return;
+                                } catch (Throwable ignored) {
+                                    // декодирование не должно ронять поток
+                                }
+                            }
+                        }
+                    }, "luna-decode");
+                    videoThread.setDaemon(true);
+                    videoThread.start();
+                }
+            }
+        }
+    }
+
     public void setVideoFrameListener(VideoFrameListener listener) {
         this.videoFrameListener = listener;
     }
@@ -86,11 +131,12 @@ public final class PanoLunaApp extends Application {
 
             @Override
             public void onVideoFrame(byte[] annexB) {
-                // Прямой эфир по TCP: декодируем на Surface (fallback для OSC-MJPEG).
-                VideoFrameListener l = videoFrameListener;
-                if (l != null) {
-                    l.onVideoFrame(annexB);
-                }
+                // ВАЖНО: этот метод вызывается ВНУТРИ потока чтения сокета. Декодирование
+                // блокирующее (dequeueInputBuffer с таймаутом), поэтому декодировать здесь
+                // нельзя: пока декодер работает, TCP не читается, буфер переполняется и
+                // камера ЗАКРЫВАЕТ соединение (наблюдали обрыв на 3-м кадре). Кладём кадр
+                // в очередь, декодирует отдельный поток.
+                enqueueVideoFrame(annexB);
             }
         });
         // Тему применяют сами активити через applyTheme(activity).
@@ -240,6 +286,9 @@ public final class PanoLunaApp extends Application {
             Network network = currentWifiNetwork();
             pinWifi(network);
             connection.connect(settings.getHost(), settings.getPort(), network, 6000L);
+            // Запоминаем сеть: по ней же переподключаемся после обрыва, иначе
+            // Android уйдёт в мобильную сеть, и камера станет недоступна.
+            camera.setBoundNetwork(network);
             dispatchState(true, null);
             return true;
         } catch (Exception e) {

@@ -251,11 +251,19 @@ public final class PanoShooter {
             // не двигается, снимок не проходит, и раньше мы молча «проходили» все
             // оставшиеся точки, рапортуя успех. Лучше честно остановиться.
             if (!camera.isConnected()) {
-                setState(State.ERROR);
-                publishError("Соединение с камерой потеряно на кадре " + (cursor + 1)
-                        + " из " + shots.size() + ". Сделано: " + cursor + ".");
-                log("ОСТАНОВ: соединение потеряно, сделано " + cursor + " кадров");
-                return;
+                // Камера рвёт TCP во время съёмки (известное поведение Luna — в Ripwords
+                // для этого есть auto-reconnect с backoff). Пробуем восстановить сессию
+                // и ПРОДОЛЖИТЬ с той же точки, а не терять уже снятые кадры.
+                log("Соединение потеряно на кадре " + (cursor + 1) + ": переподключаюсь");
+                boolean back = reconnect(shots.size());
+                if (!back) {
+                    setState(State.ERROR);
+                    publishError("Соединение с камерой потеряно на кадре " + (cursor + 1)
+                            + " из " + shots.size() + ". Сделано: " + cursor + ".");
+                    log("ОСТАНОВ: восстановить соединение не удалось, сделано " + cursor);
+                    return;
+                }
+                log("Соединение восстановлено, продолжаю с кадра " + (cursor + 1));
             }
             final PanoPlan.Shot shot = shots.get(cursor);
             moveTo(shot);
@@ -279,6 +287,34 @@ public final class PanoShooter {
             setState(State.DONE);
             log("Панорамма завершена: " + shots.size() + " кадров на камере");
         }
+    }
+
+    /**
+     * Восстанавливает сессию после обрыва: несколько попыток с нарастающей паузой
+     * (как auto-reconnect в Ripwords). После успеха заново объявляет live-view —
+     * гимбал не станет двигаться на голом соединении после переподключения.
+     *
+     * @return true, если соединение поднято
+     */
+    private boolean reconnect(int total) {
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            if (stopRequested.get()) {
+                return false;
+            }
+            log("Переподключение, попытка " + attempt + " из 4");
+            try {
+                if (camera.reconnect()) {
+                    sleep(800L);
+                    camera.announceLiveView();
+                    sleep(2500L);
+                    return true;
+                }
+            } catch (Throwable t) {
+                log("Попытка " + attempt + " не удалась: " + t);
+            }
+            sleep(1000L * attempt);
+        }
+        return false;
     }
 
     private void moveTo(final PanoPlan.Shot shot) {
@@ -366,7 +402,10 @@ public final class PanoShooter {
             shot.uri = uri[0];
         }
         publishShot(cursor, shot.uri, shot.pan, shot.tilt);
-        log("Снимок " + (cursor + 1) + (uri[0] != null ? " принят" : " (без URI)"));
+        if (uri[0] == null) {
+            // Ответ есть, но URI пустой: файл всё равно сохранён на камеру.
+            log("Снимок " + (cursor + 1) + ": камера не вернула URI (файл на камере)");
+        }
         // Камере нужно время записать файл. Без паузы опрос статуса начинается в момент
         // записи и добавляет камере работы — она не справляется и рвёт сессию.
         sleep(500L);

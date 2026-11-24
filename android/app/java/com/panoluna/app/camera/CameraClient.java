@@ -305,6 +305,31 @@ public final class CameraClient {
         return connection.isConnected();
     }
 
+    /** Сеть, к которой привязан сокет: нужна для переподключения. */
+    private android.net.Network boundNetwork;
+
+    public void setBoundNetwork(android.net.Network network) {
+        this.boundNetwork = network;
+    }
+
+    /**
+     * Переподключается к камере после обрыва.
+     *
+     * Камера рвёт управляющий TCP во время съёмки — это известное поведение Luna
+     * (в Ripwords есть auto-reconnect с backoff). Переподключаемся на ту же сеть,
+     * что была при первом подключении, иначе Android уйдёт в мобильную сеть.
+     *
+     * @return true, если сокет снова открыт
+     */
+    public boolean reconnect() {
+        try {
+            connection.connect(settings.getHost(), settings.getPort(), boundNetwork, 6000L);
+            return connection.isConnected();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public void announceLiveView() {
         io.execute(new Runnable() {
             @Override
