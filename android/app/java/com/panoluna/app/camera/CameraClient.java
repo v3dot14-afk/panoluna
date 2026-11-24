@@ -162,55 +162,6 @@ public final class CameraClient {
                 }, callback);
     }
 
-    public void fetchPhotoOptions(final Callback<PhotoOptions> callback) {
-        final int[] types = new int[]{
-                ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
-                ProtoCodes.PhotographyOptionType.ZOOM_SCALE,
-                ProtoCodes.PhotographyOptionType.STILL_EXPOSURE_OPTIONS,
-                ProtoCodes.PhotographyOptionType.WHITE_BALANCE,
-                ProtoCodes.PhotographyOptionType.WHITE_BALANCE_VALUE,
-                ProtoCodes.PhotographyOptionType.EXPOSURE_BIAS,
-                ProtoCodes.PhotographyOptionType.BRIGHTNESS,
-                ProtoCodes.PhotographyOptionType.RAW_CAPTURE_TYPE,
-        };
-        run(ProtoCodes.GET_PHOTOGRAPHY_OPTIONS,
-                Messages.getPhotographyOptions(types, ProtoCodes.FunctionMode.NORMAL_IMAGE),
-                settings.getRequestTimeoutMs(), new ValueReader<PhotoOptions>() {
-                    @Override
-                    public PhotoOptions read(Ucd2.Frame frame) {
-                        Proto.Reader r = new Proto.Reader(frame.payload);
-                        PhotoOptions o = new PhotoOptions();
-                        o.photoSize = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.PHOTO_SIZE_ID);
-                        o.zoom = r.doubleOrNull(2, ProtoCodes.PhotographyOptionsField.ZOOM_SCALE);
-                        o.iso = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.STILL_EXPOSURE_OPTIONS,
-                                ProtoCodes.ExposureOptionsField.ISO);
-                        o.program = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.STILL_EXPOSURE_OPTIONS,
-                                ProtoCodes.ExposureOptionsField.PROGRAM);
-                        o.shutter = r.doubleOrNull(2, ProtoCodes.PhotographyOptionsField.STILL_EXPOSURE_OPTIONS,
-                                ProtoCodes.ExposureOptionsField.SHUTTER_SPEED);
-                        o.whiteBalance = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.WHITE_BALANCE);
-                        o.kelvin = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.WHITE_BALANCE_VALUE);
-                        o.evThirds = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.EXPOSURE_BIAS);
-                        o.brightness = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.BRIGHTNESS);
-                        o.raw = r.intOrNull(2, ProtoCodes.PhotographyOptionsField.RAW_CAPTURE_TYPE);
-                        return o;
-                    }
-                }, callback);
-    }
-
-    public static final class PhotoOptions {
-        public Integer photoSize;
-        public Double zoom;
-        public Integer iso;
-        public Integer program;
-        public Double shutter;
-        public Integer whiteBalance;
-        public Integer kelvin;
-        public Integer evThirds;
-        public Integer brightness;
-        public Integer raw;
-    }
-
     // ---- Scatto ----
 
     /** Scatto singolo. La risposta arriva quando la camera ha accettato; il file arriva dopo. */
@@ -552,55 +503,6 @@ public final class CameraClient {
                 }, callback);
     }
 
-    // ---- Impostazioni fotografia ----
-
-    public void applyPhotoSettings(final Callback<Boolean> callback) {
-        final Settings s = settings;
-        final int mode = ProtoCodes.FunctionMode.NORMAL_IMAGE;
-        io.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                            Messages.setPhotoSize(s.getPhotoSize(), mode),
-                            settings.getRequestTimeoutMs()).get();
-                    if (s.isProMode()) {
-                        double shutter = s.getShutterUs() / 1_000_000.0;
-                        int program = shutter > 0.0
-                                ? ProtoCodes.ExposureProgram.MANUAL
-                                : ProtoCodes.ExposureProgram.AUTO;
-                        connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                                Messages.setExposure(program, s.getIso(), shutter, mode),
-                                settings.getRequestTimeoutMs()).get();
-                        connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                                Messages.setWhiteBalance(s.getWhiteBalanceKelvin(), mode),
-                                settings.getRequestTimeoutMs()).get();
-                        connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                                Messages.setExposureBias(s.getEvThirds(), mode),
-                                settings.getRequestTimeoutMs()).get();
-                        connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                                Messages.setBrightness(s.getBrightness(), mode),
-                                settings.getRequestTimeoutMs()).get();
-                    }
-                    connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                            Messages.setZoomScale(s.getZoom(), mode),
-                            settings.getRequestTimeoutMs()).get();
-                    connection.request(ProtoCodes.SET_PHOTOGRAPHY_OPTIONS,
-                            Messages.setRawCapture(s.getRawCapture(), mode),
-                            settings.getRequestTimeoutMs()).get();
-                    postBoolean(callback, true);
-                } catch (final Exception e) {
-                    main.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onError(describeError(e));
-                        }
-                    });
-                }
-            }
-        });
-    }
-
     // ---- File ----
 
     public static final class FilePage {
@@ -618,22 +520,6 @@ public final class CameraClient {
                         page.uris = Messages.fileListUris(frame.payload);
                         page.total = Messages.fileListTotal(frame.payload);
                         return page;
-                    }
-                }, callback);
-    }
-
-    public void deleteFiles(final String[] uris, final Callback<Boolean> callback) {
-        java.util.List<String> list = new java.util.ArrayList<String>();
-        for (String uri : uris) {
-            if (uri != null && uri.length() > 0) {
-                list.add(uri);
-            }
-        }
-        run(ProtoCodes.DELETE_FILES, Messages.deleteFiles(list),
-                settings.getRequestTimeoutMs() + 10000L, new ValueReader<Boolean>() {
-                    @Override
-                    public Boolean read(Ucd2.Frame frame) {
-                        return Boolean.TRUE;
                     }
                 }, callback);
     }

@@ -3,8 +3,6 @@ package com.panoluna.app.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.panoluna.app.proto.ProtoCodes;
-
 /**
  * Impostazioni dell'app, persistite in SharedPreferences.
  *
@@ -29,16 +27,6 @@ public final class Settings {
     private static final String KEY_TILT_MAX = "tilt_max_deg";
     private static final String KEY_INVERT_PAN = "invert_pan";
     private static final String KEY_INVERT_TILT = "invert_tilt";
-
-    private static final String KEY_PHOTO_SIZE = "photo_size";
-    private static final String KEY_ZOOM = "zoom_scale";
-    private static final String KEY_ISO = "iso";
-    private static final String KEY_SHUTTER = "shutter_us";
-    private static final String KEY_EV_THIRDS = "ev_thirds";
-    private static final String KEY_WB_KELVIN = "wb_kelvin";
-    private static final String KEY_BRIGHTNESS = "brightness";
-    private static final String KEY_RAW = "raw_capture";
-    private static final String KEY_PRO_MODE = "pro_mode";
 
     private static final String KEY_PANO_ROWS = "pano_rows";
     private static final String KEY_PANO_COLUMNS = "pano_columns";
@@ -151,81 +139,6 @@ public final class Settings {
 
     public boolean isInvertTilt() {
         return prefs.getBoolean(KEY_INVERT_TILT, false);
-    }
-
-    // ---- Fotografia ----
-
-    public int getPhotoSize() {
-        return prefs.getInt(KEY_PHOTO_SIZE, ProtoCodes.PhotoSize.ULTRA_48MP);
-    }
-
-    public void setPhotoSize(int value) {
-        prefs.edit().putInt(KEY_PHOTO_SIZE, value).apply();
-    }
-
-    public int getZoom() {
-        return prefs.getInt(KEY_ZOOM, 1);
-    }
-
-    public void setZoom(int value) {
-        prefs.edit().putInt(KEY_ZOOM, value).apply();
-    }
-
-    public int getIso() {
-        return prefs.getInt(KEY_ISO, 0);
-    }
-
-    public void setIso(int value) {
-        prefs.edit().putInt(KEY_ISO, value).apply();
-    }
-
-    /** Otturatore in microsecondi: 0 = automatico. */
-    public long getShutterUs() {
-        return prefs.getLong(KEY_SHUTTER, 0L);
-    }
-
-    public void setShutterUs(long value) {
-        prefs.edit().putLong(KEY_SHUTTER, value).apply();
-    }
-
-    public int getEvThirds() {
-        return prefs.getInt(KEY_EV_THIRDS, 0);
-    }
-
-    public void setEvThirds(int value) {
-        prefs.edit().putInt(KEY_EV_THIRDS, value).apply();
-    }
-
-    public int getWhiteBalanceKelvin() {
-        return prefs.getInt(KEY_WB_KELVIN, 0);
-    }
-
-    public void setWhiteBalanceKelvin(int value) {
-        prefs.edit().putInt(KEY_WB_KELVIN, value).apply();
-    }
-
-    public int getBrightness() {
-        return prefs.getInt(KEY_BRIGHTNESS, 0);
-    }
-
-    public void setBrightness(int value) {
-        prefs.edit().putInt(KEY_BRIGHTNESS, value).apply();
-    }
-
-    public int getRawCapture() {
-        return prefs.getInt(KEY_RAW, ProtoCodes.RawCaptureType.OFF);
-    }
-
-    public void setRawCapture(int value) {
-        prefs.edit().putInt(KEY_RAW, value).apply();
-    }
-
-    public boolean isProMode() {
-        return prefs.getBoolean(KEY_PRO_MODE, false);
-    }
-
-    public void setProMode(boolean value) {
-        prefs.edit().putBoolean(KEY_PRO_MODE, value).apply();
     }
 
     // ---- Panoramica ----

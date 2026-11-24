@@ -85,112 +85,6 @@ public final class Messages {
     }
 
     /**
-     * SetPhotographyOptions { repeated PhotographyOptionType option_types = 1;
-     * PhotographyOptions value = 2; FunctionMode function_mode = 3 }.
-     *
-     * Il function_mode non e' decorativo: le opzioni sono memorizzate per modalita'.
-     */
-    public static byte[] setPhotographyOption(int optionType, int field, int value, int functionMode) {
-        Proto.Writer nested = new Proto.Writer();
-        nested.int32(field, value);
-        Proto.Writer w = new Proto.Writer();
-        w.int32(1, optionType);
-        w.message(2, nested.toByteArray());
-        w.int32(3, functionMode);
-        return w.toByteArray();
-    }
-
-    /** Cambiare la risoluzione foto: PHOTO_SIZE_ID con l'enum PhotoSize. */
-    public static byte[] setPhotoSize(int photoSizeCode, int functionMode) {
-        return setPhotographyOption(
-                ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
-                ProtoCodes.PhotographyOptionsField.PHOTO_SIZE_ID,
-                photoSizeCode,
-                functionMode);
-    }
-
-    /**
-     * Esposizione: il firmware vuole i secondi reali, non l'enum otturatore.
-     * shutterSeconds == 0 lascia l'otturatore automatico.
-     */
-    public static byte[] setExposure(int program, int iso, double shutterSeconds, int functionMode) {
-        Proto.Writer exposure = new Proto.Writer();
-        exposure.int32(ProtoCodes.ExposureOptionsField.PROGRAM, program);
-        if (iso > 0) {
-            exposure.int32(ProtoCodes.ExposureOptionsField.ISO, iso);
-        }
-        if (shutterSeconds > 0.0) {
-            exposure.double64(ProtoCodes.ExposureOptionsField.SHUTTER_SPEED, shutterSeconds);
-        }
-        Proto.Writer nested = new Proto.Writer();
-        nested.message(ProtoCodes.PhotographyOptionsField.STILL_EXPOSURE_OPTIONS, exposure.toByteArray());
-        Proto.Writer w = new Proto.Writer();
-        w.int32(1, ProtoCodes.PhotographyOptionType.STILL_EXPOSURE_OPTIONS);
-        w.message(2, nested.toByteArray());
-        w.int32(3, functionMode);
-        return w.toByteArray();
-    }
-
-    public static byte[] setExposureBias(int thirds, int functionMode) {
-        return setPhotographyOption(
-                ProtoCodes.PhotographyOptionType.EXPOSURE_BIAS,
-                ProtoCodes.PhotographyOptionsField.EXPOSURE_BIAS,
-                thirds,
-                functionMode);
-    }
-
-    public static byte[] setBrightness(int value, int functionMode) {
-        return setPhotographyOption(
-                ProtoCodes.PhotographyOptionType.BRIGHTNESS,
-                ProtoCodes.PhotographyOptionsField.BRIGHTNESS,
-                value,
-                functionMode);
-    }
-
-    /** WhiteBalance: 0 = automatico, altrimenti MANUAL_KELVIN con la temperatura nel campo 39. */
-    public static byte[] setWhiteBalance(int kelvin, int functionMode) {
-        Proto.Writer nested = new Proto.Writer();
-        nested.int32(ProtoCodes.PhotographyOptionsField.WHITE_BALANCE,
-                kelvin == 0 ? ProtoCodes.WhiteBalance.AUTO : ProtoCodes.WhiteBalance.MANUAL_KELVIN);
-        nested.int32(ProtoCodes.PhotographyOptionsField.WHITE_BALANCE_VALUE, kelvin);
-        Proto.Writer w = new Proto.Writer();
-        w.int32(1, ProtoCodes.PhotographyOptionType.WHITE_BALANCE);
-        w.int32(1, ProtoCodes.PhotographyOptionType.WHITE_BALANCE_VALUE);
-        w.message(2, nested.toByteArray());
-        w.int32(3, functionMode);
-        return w.toByteArray();
-    }
-
-    /** Lo zoom e' un double e viaggia sul campo ZOOM_SCALE. */
-    public static byte[] setZoomScale(int scale, int functionMode) {
-        Proto.Writer nested = new Proto.Writer();
-        nested.double64(ProtoCodes.PhotographyOptionsField.ZOOM_SCALE, (double) scale);
-        Proto.Writer w = new Proto.Writer();
-        w.int32(1, ProtoCodes.PhotographyOptionType.ZOOM_SCALE);
-        w.message(2, nested.toByteArray());
-        w.int32(3, functionMode);
-        return w.toByteArray();
-    }
-
-    public static byte[] setRawCapture(int rawType, int functionMode) {
-        return setPhotographyOption(
-                ProtoCodes.PhotographyOptionType.RAW_CAPTURE_TYPE,
-                ProtoCodes.PhotographyOptionsField.RAW_CAPTURE_TYPE,
-                rawType,
-                functionMode);
-    }
-
-    /** GetPhotographyOptions { repeated PhotographyOptionType option_types = 1; FunctionMode = 2 } */
-    public static byte[] getPhotographyOptions(int[] optionTypes, int functionMode) {
-        Proto.Writer w = new Proto.Writer();
-        for (int type : optionTypes) {
-            w.int32(1, type);
-        }
-        w.int32(2, functionMode);
-        return w.toByteArray();
-    }
-
-    /**
      * Vettore della levetta del gimbal.
      *
      * L'interfaccia usa orizzontale/verticale in -100..100; la camera usa gli assi ruotati
@@ -239,15 +133,6 @@ public final class Messages {
         w.int32(1, mediaType);
         w.int32(2, start);
         w.int32(3, limit);
-        return w.toByteArray();
-    }
-
-    /** DeleteFiles { repeated string uri = 1 } */
-    public static byte[] deleteFiles(List<String> uris) {
-        Proto.Writer w = new Proto.Writer();
-        for (String uri : uris) {
-            w.string(1, uri);
-        }
         return w.toByteArray();
     }
 

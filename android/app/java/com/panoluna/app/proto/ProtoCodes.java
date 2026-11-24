@@ -20,7 +20,6 @@ public final class ProtoCodes {
     public static final int STOP_CAPTURE = 5;
     public static final int GET_FILE_EXTRA = 11;
     public static final int SET_FILE_EXTRA = 16;
-    public static final int DELETE_FILES = 12;
     public static final int GET_FILE_LIST = 13;
     public static final int GET_MINI_THUMBNAIL = 30;
     /** SET_ACCESS_CAMERA_FILE_STATE: annuncia allo stato access_state. */
@@ -28,7 +27,6 @@ public final class ProtoCodes {
     public static final int SET_OPTIONS = 7;
     public static final int GET_OPTIONS = 8;
     public static final int SET_PHOTOGRAPHY_OPTIONS = 9;
-    public static final int GET_PHOTOGRAPHY_OPTIONS = 10;
     public static final int GET_CURRENT_CAPTURE_STATUS = 15;
     public static final int GET_TIMELAPSE_OPTIONS = 17;
     public static final int SET_TIMELAPSE_OPTIONS = 18;
@@ -56,35 +54,8 @@ public final class ProtoCodes {
     public static final int NOTIFICATION_GIMBAL_SPEED = 0x206A;
     public static final int NOTIFICATION_PTZ_STATE_OBSERVED = 8302;
 
-    /** Enum PhotoSize: la risoluzione con cui la camera scatta. */
-    public static final class PhotoSize {
-        public static final int STANDARD_12MP = 3;   // 4000x3000
-        public static final int ULTRA_48MP = 7;      // 8000x6000
-        public static final int ULTRA_37MP = 12;     // 5952x2976 (2:1) - non usato
-
-        public static String label(int value) {
-            switch (value) {
-                case 0: return "6912x3456";
-                case 1: return "6272x3136";
-                case 2: return "6080x3040";
-                case 3: return "Standard 12 MP (4000x3000)";
-                case 4: return "4000x2250";
-                case 5: return "5212x3542";
-                case 6: return "5312x2988";
-                case 7: return "Ultra 48 MP (8000x6000)";
-                case 8: return "8000x4500";
-                case 9: return "2976x2976";
-                case 10: return "5984x5984";
-                case 11: return "11968x5984";
-                case 12: return "5952x2976";
-                default: return "sconosciuta (#" + value + ")";
-            }
-        }
-    }
-
     /** Valori di OptionType usati dall'app. */
     public static final class OptionType {
-        public static final int PHOTO_SIZE = 2;
         public static final int CAPTURE_TIME_LIMIT = 7;
         public static final int BATTERY_STATUS = 11;
         public static final int LOCAL_TIME = 12;
@@ -100,7 +71,6 @@ public final class ProtoCodes {
 
     /** Numeri di campo di Options. */
     public static final class OptionsField {
-        public static final int PHOTO_SIZE = 2;
         public static final int BATTERY_STATUS = 11;
         public static final int SERIAL_NUMBER = 15;
         public static final int STORAGE_STATE = 20;
@@ -132,75 +102,6 @@ public final class ProtoCodes {
     public static final class PanoAspect {
         public static final int SPHERE_360 = 1;
         public static final int RATIO_2_1 = 4;
-    }
-
-    public static final class FunctionMode {
-        public static final int MOBILE_TIMELAPSE = 2;
-        public static final int NORMAL_IMAGE = 6;
-        public static final int NORMAL_VIDEO = 7;
-        public static final int NORMAL_POWER_PANO_IMAGE = 14;
-    }
-
-    public static final class PhotographyOptionType {
-        public static final int BRIGHTNESS = 2;
-        public static final int SHARPNESS = 6;
-        public static final int EXPOSURE_BIAS = 7;
-        public static final int EXPOSURE_MODE = 8;
-        public static final int WHITE_BALANCE = 13;
-        public static final int VIDEO_GAMMA_MODE = 18;
-        public static final int STILL_EXPOSURE_OPTIONS = 20;
-        public static final int RAW_CAPTURE_TYPE = 25;
-        public static final int PHOTO_SIZE_ID = 30;
-        public static final int RECORD_RESOLUTION = 31;
-        public static final int COLOR_MODE = 35;
-        public static final int WHITE_BALANCE_VALUE = 39;
-        public static final int ZOOM_SCALE = 53;
-        public static final int PANO_ASPECT = 98;
-        public static final int FILTER_INTENSITY = 104;
-        // Фокус сюда не добавлен намеренно. Имена AF_LENS_INFO / AUTO_FOCUS_MODE
-        // в прошивке есть, но числа к ним зашифрованы (AppShield). Перебор номеров
-        // вслепую бесполезен: камера отвечает 200 на ЛЮБОЙ номер, поэтому «успех»
-        // ничего не подтверждает. Режим автофокуса ставится на самой камере.
-    }
-
-    public static final class PhotographyOptionsField {
-        public static final int BRIGHTNESS = 2;
-        public static final int SHARPNESS = 6;
-        public static final int EXPOSURE_BIAS = 7;
-        public static final int EXPOSURE_MODE = 8;
-        public static final int WHITE_BALANCE = 13;
-        public static final int STILL_EXPOSURE_OPTIONS = 20;
-        public static final int RAW_CAPTURE_TYPE = 25;
-        public static final int PHOTO_SIZE_ID = 30;
-        public static final int RECORD_RESOLUTION = 31;
-        public static final int COLOR_MODE = 35;
-        public static final int WHITE_BALANCE_VALUE = 39;
-        public static final int ZOOM_SCALE = 53;
-        public static final int PANO_ASPECT = 98;
-        public static final int FILTER_INTENSITY = 104;
-    }
-
-    public static final class ExposureOptionsField {
-        public static final int PROGRAM = 1;
-        public static final int ISO = 2;
-        public static final int SHUTTER_SPEED = 3;
-    }
-
-    public static final class ExposureProgram {
-        public static final int AUTO = 0;
-        public static final int ISO_PRIORITY = 1;
-        public static final int SHUTTER_PRIORITY = 2;
-        public static final int MANUAL = 3;
-    }
-
-    public static final class WhiteBalance {
-        public static final int AUTO = 0;
-        public static final int MANUAL_KELVIN = 3;
-    }
-
-    public static final class RawCaptureType {
-        public static final int OFF = 0;
-        public static final int DNG = 1;
     }
 
     /** TakePicture.Mode: 0 normale, 1 AEB, 3 burst. NON e' CaptureMode. */
