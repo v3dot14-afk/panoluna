@@ -408,16 +408,14 @@ public final class PanoramaActivity extends Activity {
     }
 
     /**
-     * Avvia la live view una sola volta alla connessione.
+     * Запускает live view один раз при подключении.
      *
-     * Два канала, и оба нужны:
-     * - **TCP-поток START_LIVE_STREAM** — открывает gate гимбала и съёмки: без него
-     *   камера игнорирует GIMBAL_CONTROL и TAKE_PICTURE (даже отвечая 200). Отправляется
-     *   всегда, не зависимо от MJPEG.
-     * - **OSC-MJPEG** — картинка для экрана, если камера его предлагает.
-     *
-     * Если MJPEG не дал кадра, картинку даёт TCP-поток через декодёр (VideoDecoder),
-     * который уже работает от того же START_LIVE_STREAM.
+     * Только TCP-поток START_LIVE_STREAM — это и картинка (декод VideoDecoder на
+     * SurfaceView) и gate гимбала. Эмпирически на Luna Ultra: гимбал отзывается
+     * только на TCP-стрим START_LIVE_STREAM. OSC-MJPEG картинку даёт, но gate
+     * гимбала не открывает, и его присутствие ломает TCP-стрим (одна стримовая
+     * позиция): v1.11 (TCP только) — гимбал отзывается; MJPEG-only и «оба сразу»
+     * — гимбал мёртв. Поэтому MJPEG в гайд-цепочке не используем.
      */
     private void ensureLiveView() {
         if (liveViewStarted) {
@@ -425,11 +423,9 @@ public final class PanoramaActivity extends Activity {
         }
         liveViewStarted = true;
         previewFrames = false;
-        // Live-view взаимоисключающий, как в оригинале: пробуем OSC-MJPEG первым —
-        // активный MJPEG сам открывает gate гимбала (референс: ready = previewActive).
-        // Если MJPEG недоступен — фалбэк в TCP-поток START_LIVE_STREAM. Оба потока сразу
-        // не запускаем: в оригинале это взаимоисключающе, совмещение ломает ответ гимбала.
-        startPreview();
+        decodeActive = false;
+        // Gate гимбала и съёмки + картинка: TCP-поток START_LIVE_STREAM, декодируем на SurfaceView.
+        startStreamFallback();
     }
 
     /** Live-view реально отдаёт кадры: либо OSC-MJPEG, либо TCP-поток расшифрован. */
