@@ -163,67 +163,121 @@ public final class CameraClient {
     }
 
     /**
-     * Ищет номер типа опции для фокуса.
+     * Ищет номер типа опции для фокуса перебором диапазона 1..128.
      *
-     * В прошивке 1.0.288 имена AF_LENS_INFO / AUTO_FOCUS_MODE присутствуют, но числа
-     * к ним зашифрованы, поэтому фокус нельзя задать «по имени». Зато камера сама
-     * перечисляет существующие типы опций, если запросить их без списка. GET ничего
-     * не меняет, поэтому зонд безопасен.
+     * Почему перебором: запрос GET без списка типов камера игнорирует и отвечает
+     * пустым телом (200 без полей) — проверено на аппарате, в журнале было
+     * «Типы опций фокуса не получены». Значит перечислять существующие типы она
+     * не станет, но на КОНКРЕТНЫЙ тип отвечает, только если он у неё есть.
      *
-     * Известные типы отбрасываются: остаток — то, чего в нашей схеме ещё нет, и
-     * среди него лежит фокус. Найденные номера пишутся в журнал: по ним можно
-     * задать режим и убедиться, что камера его приняла.
+     * GET ничего не меняет, поэтому перебор безопасен. Идём блоками по 8 типов и
+     * собираем те, что реально вернулись. Известные типы (разрешение, зум,
+     * баланс белого…) отбрасываются: остаток — то, чего в нашей схеме нет, и
+     * среди него лежит фокус.
      */
+    /**
+     * Таймаут одного блока пробы. Короткий намеренно: на несуществующий тип камера
+     * не отвечает вовсе, и с обычным 15-секундным таймаутом 32 блока заняли бы
+     * восемь минут. 1200 мс хватает: ответ приходит за единицы миллисекунд.
+     */
+    private static final long PROBE_TIMEOUT_MS = 1200L;
+
+    private static boolean blockContains(int[] block, int value) {
+        for (int b : block) {
+            if (b == value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void probeFocusOptionType(final Callback<int[]> callback) {
-        final int[] known = new int[]{
-                ProtoCodes.PhotographyOptionType.BRIGHTNESS,
-                ProtoCodes.PhotographyOptionType.SHARPNESS,
-                ProtoCodes.PhotographyOptionType.EXPOSURE_BIAS,
-                ProtoCodes.PhotographyOptionType.EXPOSURE_MODE,
-                ProtoCodes.PhotographyOptionType.WHITE_BALANCE,
-                ProtoCodes.PhotographyOptionType.STILL_EXPOSURE_OPTIONS,
-                ProtoCodes.PhotographyOptionType.RAW_CAPTURE_TYPE,
-                ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
-                ProtoCodes.PhotographyOptionType.RECORD_RESOLUTION,
-                ProtoCodes.PhotographyOptionType.COLOR_MODE,
-                ProtoCodes.PhotographyOptionType.WHITE_BALANCE_VALUE,
-                ProtoCodes.PhotographyOptionType.ZOOM_SCALE,
-                ProtoCodes.PhotographyOptionType.PANO_ASPECT,
-                ProtoCodes.PhotographyOptionType.FILTER_INTENSITY,
-        };
-        run(ProtoCodes.GET_PHOTOGRAPHY_OPTIONS,
-                Messages.getAllPhotographyOptionTypes(ProtoCodes.FunctionMode.NORMAL_IMAGE),
-                settings.getRequestTimeoutMs(), new ValueReader<int[]>() {
-                    @Override
-                    public int[] read(Ucd2.Frame frame) {
-                        java.util.Set<Integer> found = new java.util.TreeSet<Integer>();
+        io.execute(new Runnable() {
+            @Override
+            public void run() {
+                final java.util.Set<Integer> known = new java.util.HashSet<Integer>();
+                int[] knownTypes = new int[]{
+                        ProtoCodes.PhotographyOptionType.BRIGHTNESS,
+                        ProtoCodes.PhotographyOptionType.SHARPNESS,
+                        ProtoCodes.PhotographyOptionType.EXPOSURE_BIAS,
+                        ProtoCodes.PhotographyOptionType.EXPOSURE_MODE,
+                        ProtoCodes.PhotographyOptionType.WHITE_BALANCE,
+                        ProtoCodes.PhotographyOptionType.STILL_EXPOSURE_OPTIONS,
+                        ProtoCodes.PhotographyOptionType.RAW_CAPTURE_TYPE,
+                        ProtoCodes.PhotographyOptionType.PHOTO_SIZE_ID,
+                        ProtoCodes.PhotographyOptionType.RECORD_RESOLUTION,
+                        ProtoCodes.PhotographyOptionType.COLOR_MODE,
+                        ProtoCodes.PhotographyOptionType.WHITE_BALANCE_VALUE,
+                        ProtoCodes.PhotographyOptionType.ZOOM_SCALE,
+                        ProtoCodes.PhotographyOptionType.PANO_ASPECT,
+                        ProtoCodes.PhotographyOptionType.FILTER_INTENSITY,
+                };
+                for (int t : knownTypes) {
+                    known.add(t);
+                }
+                final java.util.Set<Integer> unknown = new java.util.TreeSet<Integer>();
+                final long started = System.currentTimeMillis();
+                // Блок по 4 типа: слишком большой запрос камера тоже может обрезать.
+                for (int base = 1; base <= 128; base += 4) {
+                    // Общий предел: проба не должна задерживать старт панорамы. На
+                    // существующий тип камера отвечает за единицы миллисекунд, так что
+                    // шести секунд хватает с большим запасом.
+                    if (System.currentTimeMillis() - started > 6000L) {
+                        break;
+                    }
+                    int[] block = new int[]{
+                            Math.min(128, base),
+                            Math.min(128, base + 1),
+                            Math.min(128, base + 2),
+                            Math.min(128, base + 3),
+                    };
+                    try {
+                        Ucd2.Frame frame = connection.request(
+                                ProtoCodes.GET_PHOTOGRAPHY_OPTIONS,
+                                Messages.getPhotographyOptions(block,
+                                        ProtoCodes.FunctionMode.NORMAL_IMAGE),
+                                PROBE_TIMEOUT_MS).get();
                         Proto.Reader r = new Proto.Reader(frame.payload);
-                        // Поле 1 повторяется: камера перечисляет типы, которые знает.
+                        // Камера отвечает на существующий тип непустым телом. Точная
+                        // раскладка ответа в разных прошивках разная, поэтому тип
+                        // считается подтверждённым, если он встречается в поле 1
+                        // (эхо запроса) или в поле 3 (список успешных типов).
+                        boolean anyField = false;
                         for (Proto.Field f : r.fields()) {
-                            if (f.number == 1 && f.wireType == Proto.WIRE_VARINT) {
-                                found.add((int) f.varint);
+                            if (f.wireType != Proto.WIRE_VARINT) {
+                                anyField = true;
+                                continue;
                             }
-                        }
-                        java.util.List<Integer> unknown = new java.util.ArrayList<Integer>();
-                        for (Integer type : found) {
-                            boolean isKnown = false;
-                            for (int k : known) {
-                                if (k == type) {
-                                    isKnown = true;
-                                    break;
+                            int type = (int) f.varint;
+                            if ((f.number == 1 || f.number == 3) && blockContains(block, type)) {
+                                anyField = true;
+                                if (!known.contains(type)) {
+                                    unknown.add(type);
                                 }
                             }
-                            if (!isKnown) {
-                                unknown.add(type);
-                            }
                         }
-                        int[] result = new int[unknown.size()];
-                        for (int i = 0; i < result.length; i++) {
-                            result[i] = unknown.get(i);
+                        if (!anyField) {
+                            // Пустое тело: ни один тип блока камере не известен.
+                            continue;
                         }
-                        return result;
+                    } catch (Exception ignored) {
+                        // блок не ответил — идём дальше, камера могла не знать эти типы
                     }
-                }, callback);
+                }
+                int[] result = new int[unknown.size()];
+                int i = 0;
+                for (Integer t : unknown) {
+                    result[i++] = t;
+                }
+                final int[] out = result;
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onResult(out);
+                    }
+                });
+            }
+        });
     }
 
     public void fetchPhotoOptions(final Callback<PhotoOptions> callback) {

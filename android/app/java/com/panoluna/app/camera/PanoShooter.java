@@ -112,12 +112,13 @@ public final class PanoShooter {
         }
         this.plan = plan;
         this.cursor = 0;
+        this.shotsDone = 0;
         this.lastError = null;
         pauseRequested.set(false);
         stopRequested.set(false);
         gimbal.resetPosition(0f, 0f);
         setState(State.RUNNING);
-        log("Панорамма из " + plan.size() + " кадров");
+        log("Панорама из " + plan.size() + " кадров");
         worker.execute(new Runnable() {
             @Override
             public void run() {
@@ -279,7 +280,17 @@ public final class PanoShooter {
                 setState(State.PAUSED);
                 return;
             }
-            shoot(shot);
+            boolean captured = shoot(shot);
+            if (!captured) {
+                // Кадр не снят обеими попытками: не выдаём его за снятый. Раньше
+                // cursor++ шёл всегда, и итог сообщал «24 кадров», хотя последний
+                // кадр был отклонён камерой.
+                setState(State.ERROR);
+                publishError("Кадр " + (cursor + 1) + " не снят после двух попыток"
+                        + (lastError == null ? "" : ": " + lastError));
+                return;
+            }
+            shotsDone++;
             cursor++;
             publishProgress(cursor, shots.size());
         }
@@ -289,7 +300,7 @@ public final class PanoShooter {
             setState(State.PAUSED);
         } else {
             setState(State.DONE);
-            log("Панорамма завершена: " + shots.size() + " кадров на камере");
+            log("Панорама завершена: " + shotsDone + " из " + shots.size() + " кадров на камере");
         }
     }
 
@@ -367,7 +378,30 @@ public final class PanoShooter {
         sleep(350L);
     }
 
-    private void shoot(final PanoPlan.Shot shot) {
+    private boolean shoot(final PanoPlan.Shot shot) {
+        // Две попытки: таймаут команды на последнем кадре почти всегда означает, что
+        // камера не ответила, а не что кадр не сделан. Повтор дешевле, чем потерять
+        // кадр из готовой панорамы: один недостающий кадр — дырка в сфере.
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            if (attempt > 1) {
+                // Перед повтором разблокируем камеру: после таймаута она может
+                // остаться в состоянии съёмки, и повтор тоже не ответит.
+                log("Кадр " + (cursor + 1) + ": повторная попытка");
+                camera.recoverFromStuckCapture();
+                sleep(1500L);
+            }
+            if (shootOnce(shot)) {
+                return true;
+            }
+            if (stopRequested.get()) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /** Одна попытка кадра. true — камера приняла снимок. */
+    private boolean shootOnce(final PanoPlan.Shot shot) {
         final Object lock = new Object();
         final String[] uri = new String[1];
         final String[] error = new String[1];
@@ -397,10 +431,10 @@ public final class PanoShooter {
             }
         }
         if (error[0] != null) {
+            // Состояние ERROR ставит внешний shoot(): здесь ещё есть вторая попытка.
             lastError = error[0];
-            setState(State.ERROR);
-            publishError("Снимок " + (cursor + 1) + " отклонён: " + error[0]);
-            return;
+            log("Снимок " + (cursor + 1) + " отклонён: " + error[0]);
+            return false;
         }
         if (uri[0] != null) {
             shot.uri = uri[0];
@@ -467,6 +501,7 @@ public final class PanoShooter {
             }
             sleep(settings.getPanoShotDelayMs());
         }
+        return true;
     }
 
     /**
@@ -503,7 +538,8 @@ public final class PanoShooter {
         });
         synchronized (lock) {
             try {
-                lock.wait(6_000L);
+                // Зонд ограничен шестью секундами внутри, плюс запас на сеть.
+                lock.wait(9_000L);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -595,6 +631,9 @@ public final class PanoShooter {
             Thread.currentThread().interrupt();
         }
     }
+
+    /** Сколько кадров реально снято: итог не должен выдавать план за результат. */
+    private int shotsDone;
 
     private void setState(final State value) {
         state = value;
