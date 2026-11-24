@@ -150,12 +150,6 @@
     <string name="settings_clear">Очистить все данные приложения</string>
     <string name="settings_clear_action">Очистить</string>
     <string name="settings_clear_done">Данные приложения очищены</string>
-    <string name="settings_templates">Шаблоны</string>
-    <string name="settings_templates_info">Сохраните готовый шаблон 24 кадров в удобную папку на телефоне, затем перенесите его на компьютер.</string>
-    <string name="settings_download_ptgui">Скачать шаблон PTGui (.pts)</string>
-    <string name="settings_download_pano2vr">Скачать проект Pano2VR (.p2vr)</string>
-    <string name="settings_template_saved">Шаблон сохранён: %1$s</string>
-    <string name="settings_template_save_failed">Не удалось сохранить шаблон</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_version">Версия</string>
 </resources>
