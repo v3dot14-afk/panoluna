@@ -417,23 +417,29 @@ public final class CameraClient {
             @Override
             public void run() {
                 long deadline = System.currentTimeMillis() + timeoutMs;
+                int polls = 0;
                 while (System.currentTimeMillis() < deadline) {
                     final boolean[] idle = new boolean[]{false};
-                    final Object lock = new Object();
                     try {
+                        // Опрос РАЗРЕЖЕН: каждые 1500 мс, а не 500. Снимок 48 МП пишется
+                        // на камеру несколько секунд, и частые запросы статуса
+                        // конкурируют с записью — камера не справляется и рвёт сессию.
                         Ucd2.Frame frame = connection.request(
                                 ProtoCodes.GET_CURRENT_CAPTURE_STATUS, new byte[0], 2500L).get();
                         int state = Messages.captureState(frame.payload, true);
                         idle[0] = !ProtoCodes.CaptureState.isBusy(state);
                     } catch (Exception e) {
+                        // Таймаут статуса — не повод считать камеру свободной: она может
+                        // писать файл. Продолжаем ждать до общего дедлайна.
                         idle[0] = false;
                     }
+                    polls++;
                     if (idle[0]) {
                         postBoolean(callback, true);
                         return;
                     }
                     try {
-                        Thread.sleep(500L);
+                        Thread.sleep(1500L);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;

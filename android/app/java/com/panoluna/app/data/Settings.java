@@ -265,8 +265,13 @@ public final class Settings {
         prefs.edit().putFloat(KEY_PANO_TILT_TOP, top).putFloat(KEY_PANO_TILT_BOTTOM, bottom).apply();
     }
 
+    /**
+     * Пауза после снимка. Снимок по умолчанию 48 МП (8000x6000), запись на карту
+     * занимает несколько секунд. Меньшая пауза приводила к «камера ещё занята» и
+     * обрывам сессии на середине панорамы (наблюдали на кадрах 13-16).
+     */
     public long getPanoShotDelayMs() {
-        return prefs.getLong(KEY_PANO_DELAY, 6000L);
+        return prefs.getLong(KEY_PANO_DELAY, 8000L);
     }
 
     public void setPanoShotDelayMs(long value) {

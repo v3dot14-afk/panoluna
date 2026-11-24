@@ -414,50 +414,43 @@ public final class PanoShooter {
         // стрима — при сломленном стриме не закрывается), awaitCaptureIdle не дождётся:
         // перезапускаем стрим, чтобы разблокировать камеру и восстановить стрим,
         // после которого гимбал может двигаться. Как drainCamera() в TimelapseEngine.
-        boolean captureIdle = false;
-        for (int drain = 0; drain < 2 && !captureIdle; drain++) {
-            final Object idleLock = new Object();
-            final boolean[] idle = new boolean[1];
-            camera.awaitCaptureIdle(settings.getPanoShotDelayMs() + 4000L,
-                    new CameraClient.Callback<Boolean>() {
-                        @Override
-                        public void onResult(Boolean value) {
-                            idle[0] = value;
-                            synchronized (idleLock) {
-                                idleLock.notifyAll();
-                            }
-                        }
-
-                        @Override
-                        public void onError(String message) {
-                            idle[0] = false;
-                            synchronized (idleLock) {
-                                idleLock.notifyAll();
-                            }
-                        }
-                    });
-            synchronized (idleLock) {
-                try {
-                    idleLock.wait(settings.getPanoShotDelayMs() + 5000L);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+        // Ждём, пока камера запишет файл. Снимок 48 МП пишется несколько секунд, и
+        // двигать гимбал раньше нельзя: камера занята, вектор игнорируется, а частые
+        // опросы конкурируют с записью и рвут сессию (наблюдали обрывы на 13-16 кадрах).
+        // Одна длинная проверка вместо цикла с перезапусками стрима.
+        final Object idleLock = new Object();
+        final boolean[] idle = new boolean[1];
+        camera.awaitCaptureIdle(25_000L, new CameraClient.Callback<Boolean>() {
+            @Override
+            public void onResult(Boolean value) {
+                idle[0] = Boolean.TRUE.equals(value);
+                synchronized (idleLock) {
+                    idleLock.notifyAll();
                 }
             }
-            captureIdle = idle[0];
-            if (captureIdle) {
-                log("Камера свободна: движение к следующей точке");
-            } else {
-                // НЕ перезапускаем стрим: повторный START_LIVE_STREAM на живой сессии
-                // рвёт управляющее соединение (наблюдали обрыв на 9-м кадре). Просто
-                // ждём ещё — снимок и запись файла конечны.
-                log("Камера ещё занята: жду (без перезапуска стрима)");
-                sleep(1500L);
+
+            @Override
+            public void onError(String message) {
+                idle[0] = false;
+                synchronized (idleLock) {
+                    idleLock.notifyAll();
+                }
+            }
+        });
+        synchronized (idleLock) {
+            try {
+                idleLock.wait(28_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
-        if (!captureIdle) {
-            log("Камера ещё занята после перезапуска стрима: жду перед следующей точкой");
+        if (idle[0]) {
+            log("Камера свободна: движение к следующей точке");
+        } else {
+            // Не дождались за 25 с: всё равно идём дальше, но пауза побольше.
+            log("Камера занята дольше 25 с: пауза перед следующей точкой");
+            sleep(settings.getPanoShotDelayMs());
         }
-        sleep(settings.getPanoShotDelayMs());
     }
 
     /** Установить режим фото (photo_sub_mode = SINGLE) и дождатьсяConfirmation, с таймаутом. */
