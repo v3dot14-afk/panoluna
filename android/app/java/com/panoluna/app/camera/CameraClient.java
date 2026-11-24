@@ -300,6 +300,50 @@ public final class CameraClient {
      * отправляется именно перед START, а НЕ перед каждым движением гимбала: на активном
      * стриме лишний 118 ломает движение (регрессия v1.16.7).
      */
+    /**
+     * Разблокирует камеру, зависшую в состоянии съёмки.
+     *
+     * Снимок 48 МП проходит через ту же цепочку, что держит стрим live-view. Если
+     * камера не закрыла цикл (наблюдали зависание на 3-м кадре: статус «занято»
+     * дольше 25 с при реальном времени записи ~5 с), повторный START_LIVE_STREAM
+     * восстанавливает цепочку и отпускает состояние. Тот же приём, что
+     * ensureRunningForCapture() в PreviewController эталона.
+     */
+    public void recoverFromStuckCapture() {
+        io.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (Throwable ignored) {
+                    // старое firmware может не знать команду
+                }
+                try {
+                    connection.request(ProtoCodes.START_LIVE_STREAM,
+                            Messages.startLiveStream(),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (Throwable ignored) {
+                    // ack не гарантирует стрим; важен сам факт повторного START
+                }
+            }
+        });
+    }
+
+    /** Занята ли камера съёмкой прямо сейчас (короткий запрос, не блокирует надолго). */
+    public boolean isCaptureStuck() {
+        try {
+            Ucd2.Frame frame = connection.request(ProtoCodes.GET_CURRENT_CAPTURE_STATUS,
+                    new byte[0], 2500L).get();
+            int state = Messages.captureState(frame.payload, true);
+            return ProtoCodes.CaptureState.isBusy(state);
+        } catch (Exception e) {
+            // Нет ответа — считаем, что камера ещё не освободилась.
+            return true;
+        }
+    }
+
     /** Живо ли управляющее соединение: на мёртвом сокете команды не уходят. */
     public boolean isConnected() {
         return connection.isConnected();

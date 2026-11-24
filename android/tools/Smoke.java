@@ -82,14 +82,18 @@ public final class Smoke {
         // (-57..+235), а не по кругу 0..360: за 235° гимбал физически не ходит,
         // и старый план упирался в предел на 4-м кадре.
         PanoPlan plan = PanoPlan.shot24();
-        check(plan.size() == 24, "24 кадра");
-        check(plan.getRows() == 4 && plan.getColumns() == 6, "4x6");
+        check(plan.size() == 32, "32 кадра");
+        check(plan.getRows() == 4 && plan.getColumns() == 8, "4x8");
         float[] tilts = new float[4];
         for (PanoPlan.Shot s : plan.shots()) tilts[s.row] = s.tilt;
-        check(Math.abs(tilts[0] - (-52f)) < 0.001f && Math.abs(tilts[3] - 52f) < 0.001f,
-                "tilt -52..+52");
+        // tilt от -58.9 до +58.9: каждый ряд покрывает +-31.15, значит нижний ряд
+        // доходит до -90 (надир), верхний до +90 (зенит) — сфера закрыта целиком.
+        check(Math.abs(tilts[0] - (-58.9f)) < 0.1f && Math.abs(tilts[3] - 58.9f) < 0.1f,
+                "tilt -58.9..+58.9 (зенит и надир покрыты)");
+        check(Math.abs(tilts[0] - 31.15f + 90f) < 0.2f,
+                "нижний ряд доходит до надира");
         // Змейка: строка 2 идёт в обратном порядке, от верхнего предела хода.
-        PanoPlan.Shot row2first = plan.shots().get(6);
+        PanoPlan.Shot row2first = plan.shots().get(8);
         check(Math.abs(row2first.pan - PanoPlan.PAN_MAX_DEG) < 0.001f,
                 "змейка строка 2 pan=" + PanoPlan.PAN_MAX_DEG);
         // Все точки плана обязаны лежать внутри физического хода гимбала.
@@ -114,17 +118,17 @@ public final class Smoke {
                 lastO = line;
             }
         }
-        check(oLines == 25, "25 строк o (24 фото + dummy), найдено " + oLines);
+        check(oLines == 33, "33 строки o (32 фото + dummy), найдено " + oLines);
         check(lastO.contains("f2"), "dummy o-line последний с f2: " + lastO);
         check(pts.contains("p w27654 h13827 f2 v360"), "p-line 2:1");
         check(pts.contains("#-fileversion 49"), "fileversion 49");
         check(pts.contains("v77.7"), "hfov измеренный 77.7");
 
-        // 9. Papywizard: 24 pict
+        // 9. Papywizard: 32 pict
         String papy = plan.toPapywizardXml();
         int picts = 0;
         for (String line : papy.split("\n")) if (line.contains("<pict ")) picts++;
-        check(picts == 24, "24 pict");
+        check(picts == 32, "32 pict");
 
         // 10. p2vr: xml valido almeno nei tag
         String p2vr = plan.toPano2vrProject("x.jpg");
