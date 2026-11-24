@@ -289,6 +289,23 @@ public final class CameraClient {
     }
 
     /**
+     * Разворачивает гимбал, объявив live-view: SET_ACCESS_CAMERA_FILE_STATE(LIVE_VIEW=5).
+     *
+     * С некоторого firmware камера складывает гимбал, когда он простаивает (особенно после
+     * остановки и долгого перерыва на фото), и остаётся сложенной, пока не получит это
+     * объявление. Без повторной отправки перед движением гимбал отзывается один раз,
+     * затем замерает. Best-effort, fire-and-forget.
+     */
+    public void announceLiveView() {
+        try {
+            connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                    Messages.setAccessCameraFileState(5));
+        } catch (Throwable ignored) {
+            // старое firmware может не знать команду
+        }
+    }
+
+    /**
      * Установить режим фото: photo_sub_mode.
      *
      * SINGLE (0) — обычный одиночный кадр (для 24-кадровой панорамы на компьютер).

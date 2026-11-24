@@ -205,6 +205,10 @@ public final class PanoShooter {
                 + Math.round(shot.tilt));
         final Object lock = new Object();
         final boolean[] reached = new boolean[1];
+        // Развернуть гимбал перед движением: после остановки и перерыва на фото камера
+        // может сложить гимбал, и без повторного объявления он не пойдёт (отозвётся один
+        // раз, затем замерает). Best-effort.
+        camera.announceLiveView();
         // Поворот гимбала по схеме: GIMBAL_CONTROL, вектор скорости к точке плана.
         gimbal.driveTo(shot.pan, shot.tilt, 30_000L, camera, new Gimbal.Callback() {
             @Override
