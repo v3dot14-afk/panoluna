@@ -23,11 +23,11 @@ import com.panoluna.app.preview.VideoDecoder;
 import com.panoluna.app.proto.Ucd2;
 
 /**
- * Ecrane principale: il mirino con anteprima dal vivo, la levetta del gimbal e i comandi
- * della panoramica di 24 scatti — tondi, con una sola pictogramma, senza scritte.
+ * Главный экран: видоискатель с живой премотром, рычаг гимбала и команды
+ * панорамы из 24 кадров — круглые, с единой пиктограммой, без надписей.
  *
- * Tutti i gestori di azioni sono protetti: nessuna eccezione durante un comando (gimbal,
- * scatto) deve far cadere l'app.
+ * Все обработчики действий защищены: ни одно исключение во время команды
+ * (гимбал, снимок) не должно ронять приложение.
  */
 public final class PanoramaActivity extends Activity {
 
@@ -152,6 +152,16 @@ public final class PanoramaActivity extends Activity {
     /** Подождать первому кадру OSC-MJPEG, прежде чем отдавать инициативу TCP-потоку. */
     private static final long MJPEG_FIRST_FRAME_MS = 6000L;
 
+    /**
+     * Максимальное время ожидания реального кадра live-view перед стартом съёмки.
+     *
+     * Камера отвечает 200 на START_LIVE_STREAM всегда, поэтому ack не значит, что стрим
+     * пошёл. По референсу (Ripwords useGimbal: ready = connected && previewActive) гимбал
+     * и съёмка работают только когда preview реально отдаёт кадры. Ждём фактического кадра
+     * (MJPEG или TCP-декод), иначе гимбал игнорирует вектор скорости.
+     */
+    private static final long LIVE_VIEW_WAIT_MS = 20000L;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -207,12 +217,7 @@ public final class PanoramaActivity extends Activity {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    app.shooter().start(PanoPlan.shot24());
-                } catch (Throwable t) {
-                    Toast.makeText(PanoramaActivity.this, "Старт не удалось: " + t.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                }
+                startWithLiveViewGate();
             }
         });
         pauseButton.setOnClickListener(new View.OnClickListener() {
@@ -273,8 +278,8 @@ public final class PanoramaActivity extends Activity {
             return;
         }
         app.addConnectionListener(connectionListener);
-        // Il gimbal risponde solo mentre la camera trasmette il preview. Quando la
-        // camera è già connessa (o si ricolleca), avvia la live view prima dell'anteprima.
+        // Гимбал отвечает только во время трансляции preview. Когда камера уже
+        // подключена (или переподключается), запускаем live view до премотра.
         if (app.isCameraConnected()) {
             ensureLiveView();
         }
@@ -334,8 +339,8 @@ public final class PanoramaActivity extends Activity {
 
                         @Override
                         public void onError(final String message) {
-                            // L'anteprima OSC non è disponibile: avvii il flusso TCP di live
-                            // view, che è la condizione per far rispondere il gimbal.
+                            // Премотёр OSC недоступен: запускаем TCP-поток live
+                            // view — это условие, при котором гимбал отвечает.
                             handler.removeCallbacks(mjpegWatchdog);
                             startStreamFallback();
                             runOnUiThread(new Runnable() {
@@ -426,11 +431,59 @@ public final class PanoramaActivity extends Activity {
         startPreview();
     }
 
+    /** Live-view реально отдаёт кадры: либо OSC-MJPEG, либо TCP-поток расшифрован. */
+    private boolean liveViewActive() {
+        return previewFrames || decodeActive;
+    }
+
     /**
-     * Avvia il flusso TCP di live view (START_LIVE_STREAM). Fallback quando il
-     * MJPEG OSC не принёс кадра: la camera honora i comandi del gimbal solo
-     * mentre trasmette il preview, e questo flusso apre il gate. Per decodificare
-     * i frame serviamo la SurfaceView.
+     * Ждёт реального кадра live-view, затем стартует панораму.
+     *
+     * START_LIVE_STREAM отправлен (gate открыт), но камера ack'ает 200 на всё: ack не
+     * гарантирует, что стрим пошёл. По референсу гимбал отвечает только при реальном
+     * preview. Поэтому днём гайд на получение кадра, а не на отправку команды. Если
+     * кадра не пришло за LIVE_VIEW_WAIT_MS — стартуем anyway (лучше попытка, чем сумма
+     * без движения), но предупреждаем.
+     */
+    private void startWithLiveViewGate() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (!liveViewActive()) {
+                    long deadline = System.currentTimeMillis() + LIVE_VIEW_WAIT_MS;
+                    while (System.currentTimeMillis() < deadline && !liveViewActive()) {
+                        try {
+                            Thread.sleep(100L);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                }
+                final boolean ok = liveViewActive();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (!ok) {
+                                log("Live-view не подтвердился кадром: старт всё равно отдан");
+                            }
+                            app.shooter().start(PanoPlan.shot24());
+                        } catch (Throwable t) {
+                            Toast.makeText(PanoramaActivity.this, "Старт не удалось: " + t.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        }, "pano-live-gate").start();
+    }
+
+    /**
+     * Запускает TCP-поток live view (START_LIVE_STREAM). Фалбэк, когда MJPEG
+     * OSC не принёс кадра: камера выполняет команды гимбала только во время
+     * трансляции preview, и этот поток открывает gate. Для декодирования кадров
+     * используем SurfaceView.
      */
     private void startStreamFallback() {
         if (streamStarted) {
