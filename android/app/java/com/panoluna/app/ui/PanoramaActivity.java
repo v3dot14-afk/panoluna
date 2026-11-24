@@ -405,11 +405,14 @@ public final class PanoramaActivity extends Activity {
     /**
      * Avvia la live view una sola volta alla connessione.
      *
-     * Il gimbal risponde alla camera solo mentre è in funzione un preview in diretta.
-     * Si prova prima l'OSC-MJPEG: quando la camera lo offre, è il suono principale e
-     * basta lui a aprire il gate (come nell'app ufficiale, che non invia START_LIVE_STREAM
-     * quando il MJPEG è disponibile). Il flusso TCP START_LIVE_STREAM è il fallback:
-     * si avvia solo se il MJPEG non dà alcun quadro entro MJPEG_FIRST_FRAME_MS.
+     * Два канала, и оба нужны:
+     * - **TCP-поток START_LIVE_STREAM** — открывает gate гимбала и съёмки: без него
+     *   камера игнорирует GIMBAL_CONTROL и TAKE_PICTURE (даже отвечая 200). Отправляется
+     *   всегда, не зависимо от MJPEG.
+     * - **OSC-MJPEG** — картинка для экрана, если камера его предлагает.
+     *
+     * Если MJPEG не дал кадра, картинку даёт TCP-поток через декодёр (VideoDecoder),
+     * который уже работает от того же START_LIVE_STREAM.
      */
     private void ensureLiveView() {
         if (liveViewStarted) {
@@ -417,7 +420,9 @@ public final class PanoramaActivity extends Activity {
         }
         liveViewStarted = true;
         previewFrames = false;
-        // Display e gate: prima il MJPEG OSC (se disponibile).
+        // Gate гимбала и съёмки: TCP-поток START_LIVE_STREAM, всегда.
+        startStreamFallback();
+        // Картинка: OSC-MJPEG (если доступен), иначе TCP-поток через декодёр.
         startPreview();
     }
 
