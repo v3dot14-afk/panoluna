@@ -1,10 +1,13 @@
 package com.panoluna.app.ui;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -41,7 +44,8 @@ public final class SettingsActivity extends Activity {
     private android.widget.Spinner themeSpinner;
     private android.widget.Spinner languageSpinner;
 
-    
+    private static final int REQUEST_SAVE_PTGUI = 4101;
+    private static final int REQUEST_SAVE_PANO2VR = 4102;
 
     /** Была ли тёмная тема применена: нужно для автоматического режима. */
     private boolean appliedDark;
@@ -127,6 +131,24 @@ public final class SettingsActivity extends Activity {
             }
         });
 
+        Button downloadPtGui = findViewById(R.id.set_download_ptgui);
+        downloadPtGui.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestTemplateSave(REQUEST_SAVE_PTGUI,
+                        "PanoLuna_24shots.pts", "application/octet-stream");
+            }
+        });
+
+        Button downloadPano2vr = findViewById(R.id.set_download_pano2vr);
+        downloadPano2vr.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestTemplateSave(REQUEST_SAVE_PANO2VR,
+                        "PanoLuna_24shots.p2vr", "application/octet-stream");
+            }
+        });
+
         Button clear = findViewById(R.id.set_clear);
         clear.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -150,6 +172,68 @@ public final class SettingsActivity extends Activity {
         TextView version = findViewById(R.id.set_version);
         version.setText(getString(R.string.settings_version) + " "
                 + BuildConfig.VERSION_NAME + "  ·  " + app.settings().getHost());
+    }
+
+    private void requestTemplateSave(int requestCode, String fileName, String mimeType) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mimeType);
+        intent.putExtra(Intent.EXTRA_TITLE, fileName);
+        try {
+            startActivityForResult(intent, requestCode);
+        } catch (android.content.ActivityNotFoundException e) {
+            Toast.makeText(this, R.string.settings_template_save_failed, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+
+        int rawId;
+        String fileName;
+        if (requestCode == REQUEST_SAVE_PTGUI) {
+            rawId = R.raw.panoluna_24shots_ptgui;
+            fileName = "PanoLuna_24shots.pts";
+        } else if (requestCode == REQUEST_SAVE_PANO2VR) {
+            rawId = R.raw.panoluna_24shots_pano2vr;
+            fileName = "PanoLuna_24shots.p2vr";
+        } else {
+            return;
+        }
+
+        Uri destination = data.getData();
+        java.io.InputStream input = null;
+        java.io.OutputStream output = null;
+        try {
+            input = getResources().openRawResource(rawId);
+            output = getContentResolver().openOutputStream(destination, "w");
+            if (output == null) {
+                throw new java.io.IOException("Destination stream unavailable");
+            }
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+            }
+            output.flush();
+            Toast.makeText(this, getString(R.string.settings_template_saved, fileName),
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.settings_template_save_failed, Toast.LENGTH_LONG).show();
+        } finally {
+            try {
+                if (input != null) input.close();
+            } catch (Exception ignored) {
+            }
+            try {
+                if (output != null) output.close();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     @Override

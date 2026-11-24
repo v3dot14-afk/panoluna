@@ -151,7 +151,11 @@
     <string name="settings_clear_action">Clear</string>
     <string name="settings_clear_done">App data cleared</string>
     <string name="settings_templates">Templates</string>
-    <string name="settings_templates_info">PTGui and Pano2VR templates are in /templates: copy them into those programs’ template folders.</string>
+    <string name="settings_templates_info">Save a ready-to-use 24-shot template to a folder on your phone, then transfer it to your computer.</string>
+    <string name="settings_download_ptgui">Download PTGui template (.pts)</string>
+    <string name="settings_download_pano2vr">Download Pano2VR project (.p2vr)</string>
+    <string name="settings_template_saved">Template saved: %1$s</string>
+    <string name="settings_template_save_failed">Could not save the template</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
 </resources>
