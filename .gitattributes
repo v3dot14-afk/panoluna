@@ -1,0 +1,9 @@
+# Source-code archives omit generated builds and cached toolchain binaries.
+# android/build.sh fetches these dependencies when they are not present.
+/dist/ export-ignore
+/android/tools/aapt2 export-ignore
+/android/tools/android.jar export-ignore
+/android/tools/*.jar export-ignore
+/android/tools/debug.keystore export-ignore
+/release/*.apk export-ignore
+/release/*.apk.idsig export-ignore
