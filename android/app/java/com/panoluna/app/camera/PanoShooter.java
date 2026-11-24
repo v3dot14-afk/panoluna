@@ -259,19 +259,29 @@ public final class PanoShooter {
         // его и гимбал замолкает (v1.16.7 — подтверждённая регрессия). Объявление делается
         // ОДИН раз при старте стрима (enterLiveView), как в рабочем probe Ripwords.
         // Поворот гимбала по схеме: GIMBAL_CONTROL, вектор скорости к точке плана.
-        long moveStart = System.currentTimeMillis();
-        gimbal.driveTo(shot.pan, shot.tilt, 30_000L, camera, new Gimbal.Callback() {
+        final long moveStart = System.currentTimeMillis();
+        // ВАЖНО: driveTo блокирующий и вызывает callback ВНУТРИ себя. Если вызвать его
+        // прямо здесь, основной поток войдёт в wait() уже ПОСЛЕ notifyAll() — уведомление
+        // потеряется, и ждём полный таймаут впустую (наблюдали 39119 мс на первый кадр:
+        // 30 с driveTo + 5 с ожидания). Поэтому запускаем в отдельном потоке.
+        Thread mover = new Thread(new Runnable() {
             @Override
-            public void onDone(boolean value) {
-                reached[0] = value;
-                synchronized (lock) {
-                    lock.notifyAll();
-                }
+            public void run() {
+                gimbal.driveTo(shot.pan, shot.tilt, 20_000L, camera, new Gimbal.Callback() {
+                    @Override
+                    public void onDone(boolean value) {
+                        reached[0] = value;
+                        synchronized (lock) {
+                            lock.notifyAll();
+                        }
+                    }
+                });
             }
-        });
+        }, "pano-move");
+        mover.start();
         synchronized (lock) {
             try {
-                lock.wait(35_000L);
+                lock.wait(25_000L);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

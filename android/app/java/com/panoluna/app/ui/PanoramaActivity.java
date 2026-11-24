@@ -192,8 +192,10 @@ public final class PanoramaActivity extends Activity {
         // дошли ли команды до гимбала и с какими значениями.
         app.shooter().gimbal().setLogListener(new com.panoluna.app.camera.Gimbal.LogListener() {
             @Override
-            public void onGimbalCommand(final int panPercent, final int tiltPercent) {
-                log("Вектор гимбала: pan " + panPercent + " tilt " + tiltPercent);
+            public void onGimbalCommand(final int panPercent, final int tiltPercent,
+                                        final int panDegPerSec, final int tiltDegPerSec) {
+                log("Вектор гимбала: pan " + panPercent + " tilt " + tiltPercent
+                        + " (расчёт " + panDegPerSec + "/" + tiltDegPerSec + " °/с)");
             }
         });
 

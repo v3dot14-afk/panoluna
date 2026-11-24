@@ -16,6 +16,23 @@ import com.panoluna.app.data.Settings;
  */
 public final class Gimbal {
 
+    /**
+     * Самая быстрая команда гимбала — НЕ 100, а 90.
+     *
+     * Измерено на Luna Ultra (apatassini, GimbalCalibration.kt): команда 100 даёт ~11 °/с,
+     * а 90 — 57 °/с по горизонтали и 41 °/с по вертикали. 100 firmware обрабатывает
+     * по-своему, и просить «на максимум», отправляя 100, значит ехать ВЧЕТВЕРО медленнее.
+     * Отсюда и 39 секунд на первый кадр вместо ~1 секунды.
+     */
+    public static final float FASTEST_SPEED = 0.90f;
+
+    /**
+     * Скорость, которую реально даёт FASTEST_SPEED: по ней считаем оценку позиции.
+     * Раньше считали 30°/с при команде 100 — вдвое оптимистичнее правды (11°/с).
+     */
+    private static final float PAN_DEG_PER_SEC = 57f;
+    private static final float TILT_DEG_PER_SEC = 41f;
+
     public interface Callback {
         void onDone(boolean reached);
     }
@@ -105,13 +122,21 @@ public final class Gimbal {
         lastIntegrationMs = now;
     }
 
-    /** Velocita' nominale al 100%, con il fattore misurato che corregge la corsa. */
+    /**
+     * Скорость при ЕДИНИЧНОМ нормированном векторе (1.0), то есть при команде 100.
+     *
+     * Замер на реальной Luna Ultra: команда 90 даёт 57 °/с pan и 41 °/с tilt. Единичный
+     * вектор соответствует команде 100, поэтому пересчитываем: 57 / 0.9 = 63.3 °/с.
+     * Тогда при команде 90 (нормированный вектор 0.9) интегрирование даст ровно 57 °/с —
+     * оценка позиции перестаёт врать, и driveTo не «доезжает» раньше времени.
+     * settings.getPanScale() — поправка под конкретный экземпляр.
+     */
     public float panSpeedDegPerSec() {
-        return 30f * settings.getPanScale();
+        return (PAN_DEG_PER_SEC / FASTEST_SPEED) * settings.getPanScale();
     }
 
     public float tiltSpeedDegPerSec() {
-        return 20f * settings.getTiltScale();
+        return (TILT_DEG_PER_SEC / FASTEST_SPEED) * settings.getTiltScale();
     }
 
     /**
@@ -132,12 +157,14 @@ public final class Gimbal {
             }
             float panDelta = normalize(targetPan - getPan());
             float tiltDelta = normalize(targetTilt - getTilt());
-            if (Math.abs(panDelta) < 1.2f && Math.abs(tiltDelta) < 1.2f) {
+            // Допуск 3°: при опросе каждые 40 мс и 57 °/с гимбал проходит ~2.3° за тик,
+            // поэтому 1.2° он гарантированно проскакивал и дёргался вокруг цели.
+            if (Math.abs(panDelta) < 3f && Math.abs(tiltDelta) < 3f) {
                 reached = true;
                 break;
             }
-            float panCommand = clamp(panDelta / 25f, -1f, 1f);
-            float tiltCommand = clamp(tiltDelta / 25f, -1f, 1f);
+            float panCommand = clamp(panDelta / 25f, -FASTEST_SPEED, FASTEST_SPEED);
+            float tiltCommand = clamp(tiltDelta / 25f, -FASTEST_SPEED, FASTEST_SPEED);
             if (Math.abs(panCommand) < 0.08f && Math.abs(tiltCommand) < 0.08f) {
                 // Sotto questa soglia il motore non parte: si forza un minimo.
                 panCommand = panCommand == 0f ? 0f : (panCommand > 0f ? 0.08f : -0.08f);
@@ -167,12 +194,13 @@ public final class Gimbal {
         if (listener == null) {
             return;
         }
-        listener.onGimbalCommand(Math.round(panCommand * 100f), Math.round(tiltCommand * 100f));
+        listener.onGimbalCommand(Math.round(panCommand * 100f), Math.round(tiltCommand * 100f),
+                Math.round(panSpeedDegPerSec()), Math.round(tiltSpeedDegPerSec()));
     }
 
     /** Слушатель отладочных событий гимбала (для экранного лога). */
     public interface LogListener {
-        void onGimbalCommand(int panPercent, int tiltPercent);
+        void onGimbalCommand(int panPercent, int tiltPercent, int panDegPerSec, int tiltDegPerSec);
     }
 
     private LogListener listener;

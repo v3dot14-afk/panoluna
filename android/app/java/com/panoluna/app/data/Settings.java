@@ -108,11 +108,12 @@ public final class Settings {
 
     /** Fattore misurato su Luna Ultra: il gimbal si muove ~1,235 volte quanto comandato. */
     public float getPanScale() {
-        return prefs.getFloat(KEY_PAN_SCALE, 1.235f);
+        // 1.0: базовая скорость взята из замера на реальной Luna Ultra (57 °/с при команде 90).
+        return prefs.getFloat(KEY_PAN_SCALE, 1f);
     }
 
     public float getTiltScale() {
-        return prefs.getFloat(KEY_TILT_SCALE, 1.235f);
+        return prefs.getFloat(KEY_TILT_SCALE, 1f);
     }
 
     public void setAngularScale(float pan, float tilt) {

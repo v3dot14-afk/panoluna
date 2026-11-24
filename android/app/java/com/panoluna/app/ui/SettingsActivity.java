@@ -105,8 +105,8 @@ public final class SettingsActivity extends Activity {
                 parseFloat(panMax.getText().toString(), 235f));
         app.settings().setTiltLimits(parseFloat(tiltMin.getText().toString(), -57f),
                 parseFloat(tiltMax.getText().toString(), 120f));
-        app.settings().setAngularScale(parseFloat(scale.getText().toString(), 1.235f),
-                parseFloat(scale.getText().toString(), 1.235f));
+        app.settings().setAngularScale(parseFloat(scale.getText().toString(), 1f),
+                parseFloat(scale.getText().toString(), 1f));
     }
 
     private static int parseInt(String value, int fallback) {
