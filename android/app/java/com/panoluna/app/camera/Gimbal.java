@@ -79,17 +79,38 @@ public final class Gimbal {
     }
 
     /** Comanda una velocita' (-1..1) e aggiorna la stima. */
-    public void setVelocity(float pan, float tilt, CameraClient client) {
+    /**
+     * Отправляет вектор скорости и интегрирует движение ТОЛЬКО если он реально ушёл.
+     *
+     * Раньше оценка интегрировала команду всегда. При оборванном соединении
+     * fire() возвращает false, камера вектор не получает, а оценка всё равно
+     * «докручивает» позицию — и driveTo отрапортует «достиг точки», хотя гимбал
+     * не сдвинулся. Именно так панорама «проходила» точки при мёртвой сессии.
+     *
+     * @return true, если команда действительно отправлена
+     */
+    public boolean setVelocity(float pan, float tilt, CameraClient client) {
+        float clampedPan = clamp(pan, -1f, 1f);
+        float clampedTilt = clamp(tilt, -1f, 1f);
+        boolean sent = client.gimbalVelocity(clampedPan, clampedTilt);
         synchronized (lock) {
             integrateLocked();
-            panVelocity = clamp(pan, -1f, 1f);
-            tiltVelocity = clamp(tilt, -1f, 1f);
+            if (!sent) {
+                // Команда не ушла: двигаться нечему, оценку не трогаем.
+                panVelocity = 0f;
+                tiltVelocity = 0f;
+                moving = false;
+                lastIntegrationMs = System.currentTimeMillis();
+                return false;
+            }
+            panVelocity = clampedPan;
+            tiltVelocity = clampedTilt;
             moving = panVelocity != 0f || tiltVelocity != 0f;
             if (moving) {
                 lastIntegrationMs = System.currentTimeMillis();
             }
         }
-        client.gimbalVelocity(panVelocity, tiltVelocity);
+        return true;
     }
 
     public void stop(CameraClient client) {
@@ -173,8 +194,15 @@ public final class Gimbal {
             if (moveTicks == 0) {
                 logSend(panCommand, tiltCommand);
             }
-            setVelocity(panCommand, tiltCommand, client);
+            boolean sent = setVelocity(panCommand, tiltCommand, client);
             moveTicks++;
+            if (!sent) {
+                // Соединение мертво: команды не уходят. Нет смысла ждать 20 секунд,
+                // молотя в мёртвый сокет — сдаёмся сразу, и панорама сообщит об ошибке.
+                stop(client);
+                callback.onDone(false);
+                return;
+            }
             try {
                 Thread.sleep(40L);
             } catch (InterruptedException e) {

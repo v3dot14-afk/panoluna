@@ -300,6 +300,11 @@ public final class CameraClient {
      * отправляется именно перед START, а НЕ перед каждым движением гимбала: на активном
      * стриме лишний 118 ломает движение (регрессия v1.16.7).
      */
+    /** Живо ли управляющее соединение: на мёртвом сокете команды не уходят. */
+    public boolean isConnected() {
+        return connection.isConnected();
+    }
+
     public void announceLiveView() {
         io.execute(new Runnable() {
             @Override

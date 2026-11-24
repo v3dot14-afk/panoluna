@@ -123,7 +123,7 @@ public final class CameraConnection {
                                                  final long timeoutMs) {
         if (!connected) {
             CompletableFuture<Ucd2.Frame> failed = new CompletableFuture<>();
-            failed.completeExceptionally(new IllegalStateException("Non connesso"));
+            failed.completeExceptionally(new IllegalStateException("Нет соединения с камерой"));
             return failed;
         }
         final int id = nextRequestId();
@@ -166,7 +166,7 @@ public final class CameraConnection {
     private synchronized void sendRaw(byte[] data) throws IOException {
         OutputStream stream = output;
         if (stream == null) {
-            throw new IOException("Socket non aperto");
+            throw new IOException("Сокет не открыт");
         }
         stream.write(data);
         stream.flush();
@@ -185,7 +185,7 @@ public final class CameraConnection {
                 try {
                     sendRaw(Ucd2.hello(nextSequence()));
                 } catch (IOException e) {
-                    Log.w(TAG, "Keep-alive non inviato: " + e.getMessage());
+                    Log.w(TAG, "Keep-alive не отправлен: " + e.getMessage());
                 }
             }
         }, 3, 3, TimeUnit.SECONDS);
@@ -249,7 +249,7 @@ public final class CameraConnection {
                 Log.w(TAG, "Ошибка в цикле чтения: " + t);
             } finally {
                 connected = false;
-                failPending("Connessione persa");
+                failPending("Соединение потеряно");
                 if (!userClosed) {
                     Listener l = listener;
                     if (l != null) {
