@@ -70,6 +70,14 @@ public final class Smoke {
         check(stop.length == 4 && (stop[0] & 0xFF) == 0x08 && stop[1] == 1
                 && (stop[2] & 0xFF) == 0x12 && stop[3] == 0, "stop = 08 01 12 00");
 
+        // 6b. объявление live-view: SET_ACCESS_CAMERA_FILE_STATE(LIVE_VIEW=5) = 08 05
+        // разворачивает камеру до START_LIVE_STREAM, без него гимбал заперт (Ripwords)
+        byte[] announce = Messages.setAccessCameraFileState(5);
+        check(announce.length == 2 && (announce[0] & 0xFF) == 0x08 && announce[1] == 5,
+                "live-view объявление = 08 05");
+        check(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE == 118,
+                "код SET_ACCESS_CAMERA_FILE_STATE = 118");
+
         // 7. piano 24 scatti: 24 punti, tilt a 4 livelli, pan ogni 60 gradi
         PanoPlan plan = PanoPlan.shot24();
         check(plan.size() == 24, "24 кадра");

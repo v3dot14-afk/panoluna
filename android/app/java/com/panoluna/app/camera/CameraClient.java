@@ -241,24 +241,29 @@ public final class CameraClient {
     }
 
     /**
-     * Mettere la camera in live view (START_LIVE_STREAM).
+     * Поставить камеру в live view (START_LIVE_STREAM).
      *
-     * Il gimbal risponde alla camera solo mentre trasmette il preview: senza
-     * questa sequenza i comandi del gimbal vengono ignorati. START_LIVE_STREAM
-     * avvia la trasmissione del video sul sottore TCP (i frame MEDIA vengono già
-     * scartati dal lettore della connessione).
+     * Гимбал отвечает только во время трансляции preview: без этой последовательности
+     * команды гимбала игнорируются. START_LIVE_STREAM запускает трансляцию видео по
+     * TCP (фреймы MEDIA уже читает ридер коннекции).
      *
-     * Si invia SOLO START_LIVE_STREAM: i riferimenti verificati sulla Luna Ultra
-     * (Insta360luna di Apatassini, insta360-luna-ultra-desktop di Ripwords) non
-     * inviano SET_ACCESS_CAMERA_FILE_STATE. Questi comandi di accesso ai file
-     * mutano lo stato della camera e, su firmware 1.0.288, la allontanano dal
-     * estado in cui il gate del gimbal si attiva, lasciando la connessione ma
-     * senza controllo.
+     * Перед START отправляется SET_ACCESS_CAMERA_FILE_STATE(LIVE_VIEW=5) = [0x08 0x05]
+     * — best-effort, как в референсе Ripwords/insta360-luna-ultra-desktop (liveview.rs,
+     * send_start). С некоторого firmware камера складывается при подключении приложения
+     * и остаётся сложенной через START_LIVE_STREAM: только это объявление разворачивает
+     * её. Без него гимбал остаётся запертым — вот почему гимбал не отвечал.
      */
     public void enterLiveView(final Callback<Boolean> callback) {
         io.execute(new Runnable() {
             @Override
             public void run() {
+                // Объявление live-view: разворачивает камеру, best-effort.
+                try {
+                    connection.fire(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5));
+                } catch (Throwable ignored) {
+                    // старое firmware может не знать команду — START всё равно пойдёт
+                }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),
