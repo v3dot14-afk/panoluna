@@ -125,6 +125,7 @@ public final class Gimbal {
                         Callback callback) {
         long deadline = System.currentTimeMillis() + Math.max(500L, timeoutMs);
         boolean reached = false;
+        int moveTicks = 0;
         while (System.currentTimeMillis() < deadline) {
             synchronized (lock) {
                 integrateLocked();
@@ -142,7 +143,11 @@ public final class Gimbal {
                 panCommand = panCommand == 0f ? 0f : (panCommand > 0f ? 0.08f : -0.08f);
                 tiltCommand = tiltCommand == 0f ? 0f : (tiltCommand > 0f ? 0.08f : -0.08f);
             }
+            if (moveTicks == 0) {
+                logSend(panCommand, tiltCommand);
+            }
             setVelocity(panCommand, tiltCommand, client);
+            moveTicks++;
             try {
                 Thread.sleep(40L);
             } catch (InterruptedException e) {
@@ -152,6 +157,28 @@ public final class Gimbal {
         }
         stop(client);
         callback.onDone(reached);
+    }
+
+    /**
+     * Сообщает в отладочный канал первый вектор движения: если камера не двигается,
+     * по нему видно, дошли ли команды до гимбала и с какими значениями.
+     */
+    private void logSend(float panCommand, float tiltCommand) {
+        if (listener == null) {
+            return;
+        }
+        listener.onGimbalCommand(Math.round(panCommand * 100f), Math.round(tiltCommand * 100f));
+    }
+
+    /** Слушатель отладочных событий гимбала (для экранного лога). */
+    public interface LogListener {
+        void onGimbalCommand(int panPercent, int tiltPercent);
+    }
+
+    private LogListener listener;
+
+    public void setLogListener(LogListener listener) {
+        this.listener = listener;
     }
 
     /** Angolo normalizzato in -180..+180. */

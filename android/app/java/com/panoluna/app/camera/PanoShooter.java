@@ -101,6 +101,11 @@ public final class PanoShooter {
         return s == State.RUNNING || s == State.PAUSED;
     }
 
+    /** Гимбал: нужен экранному логу для отладочных строк о векторах. */
+    public Gimbal gimbal() {
+        return gimbal;
+    }
+
     public void start(final PanoPlan plan) {
         if (isBusy()) {
             return;
@@ -116,7 +121,17 @@ public final class PanoShooter {
         worker.execute(new Runnable() {
             @Override
             public void run() {
-                runPlan();
+                try {
+                    runPlan();
+                } catch (Throwable t) {
+                    // Сбой в рабочем потоке НИКОГДА не должен быть молчаливым: иначе
+                    // панорама просто замирает без единой строки в логе (так и было в
+                    // v1.16.11 — лог обрывался на первой точке).
+                    lastError = String.valueOf(t);
+                    setState(State.ERROR);
+                    publishError("Сбой планировщика: " + t);
+                    log("СБОЙ ПЛАНИРОВЩИКА: " + t);
+                }
             }
         });
     }
@@ -142,7 +157,17 @@ public final class PanoShooter {
         worker.execute(new Runnable() {
             @Override
             public void run() {
-                runPlan();
+                try {
+                    runPlan();
+                } catch (Throwable t) {
+                    // Сбой в рабочем потоке НИКОГДА не должен быть молчаливым: иначе
+                    // панорама просто замирает без единой строки в логе (так и было в
+                    // v1.16.11 — лог обрывался на первой точке).
+                    lastError = String.valueOf(t);
+                    setState(State.ERROR);
+                    publishError("Сбой планировщика: " + t);
+                    log("СБОЙ ПЛАНИРОВЩИКА: " + t);
+                }
             }
         });
     }
@@ -167,6 +192,22 @@ public final class PanoShooter {
         } else {
             log("Режим фото активирован");
         }
+        // Скорость гимбала — photography option 0x55 (Ripwords PROTOCOL-GAP.md). Без явной
+        // записи камера остаётся с нулевой/неизвестной скоростью, и векторные команды
+        // игнорируются. payload побайтово совпадает с эталоном 08551205aa050210031806.
+        log("Устанавливаю скорость гимбала (уровень 3)");
+        camera.setGimbalSpeed(3, new CameraClient.Callback<Boolean>() {
+            @Override
+            public void onResult(Boolean value) {
+                log("Скорость гимбала установлена");
+            }
+
+            @Override
+            public void onError(String message) {
+                log("Скорость гимбала не установлена: " + message);
+            }
+        });
+        sleep(400L);
         // Смена режима фото может ронять стрим: оригинал вызывает ensureRunningForCapture()
         // после установки режима. Переустанавливаем стрим перед первым движением.
         log("Проверяю live-stream перед движением");

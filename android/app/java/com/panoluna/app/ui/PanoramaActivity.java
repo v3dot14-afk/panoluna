@@ -188,6 +188,14 @@ public final class PanoramaActivity extends Activity {
         stopButton = findViewById(R.id.btn_stop);
 
         app.shooter().setListener(shooterListener);
+        // Отладочная строка о первом векторе движения: если камера стоит, видно,
+        // дошли ли команды до гимбала и с какими значениями.
+        app.shooter().gimbal().setLogListener(new com.panoluna.app.camera.Gimbal.LogListener() {
+            @Override
+            public void onGimbalCommand(final int panPercent, final int tiltPercent) {
+                log("Вектор гимбала: pan " + panPercent + " tilt " + tiltPercent);
+            }
+        });
 
         // Прямой эфир по TCP-потоку: декодируем MEDIA-фреймы на SurfaceView (fallback для
         // OSC-MJPEG, как в официальном приложении Insta360).
