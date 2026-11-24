@@ -292,19 +292,34 @@ public final class CameraClient {
     }
 
     /**
-     * Страховка стрима перед движением: повторно посылает START_LIVE_STREAM, если стрим
-     * был остановлен. Без SET_ACCESS_CAMERA_FILE_STATE: повторный 118 на активном стриме
-     * сбрасывает live-view и гимбал замолкает (регрессия v1.16.7). 118 отправляется
-     * ОДИН раз в enterLiveView, как в рабочем probe Ripwords.
+     * Объявление live-view + START: пара 118 → START, как в официальном приложении.
+     *
+     * Подтверждено на устройстве 2026-11-07 (Ripwords PROTOCOL-GAP.md): свежая прошивка
+     * СКЛАДЫВАЕТ камеру при подключении приложения, и голый START_LIVE_STREAM её больше
+     * не разворачивает — нужен 118 с LIVE_VIEW(5) перед КАЖДЫМ START. При этом 118
+     * отправляется именно перед START, а НЕ перед каждым движением гимбала: на активном
+     * стриме лишний 118 ломает движение (регрессия v1.16.7).
      */
     public void announceLiveView() {
-        try {
-            connection.request(ProtoCodes.START_LIVE_STREAM,
-                    Messages.startLiveStream(),
-                    settings.getRequestTimeoutMs()).get();
-        } catch (Throwable ignored) {
-            // START ack не гарантирует кадр; повтор — только страховка
-        }
+        io.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (Throwable ignored) {
+                    // старое firmware может не знать команду — START всё равно пойдёт
+                }
+                try {
+                    connection.request(ProtoCodes.START_LIVE_STREAM,
+                            Messages.startLiveStream(),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (Throwable ignored) {
+                    // START ack не гарантирует кадр; повтор — только страховка
+                }
+            }
+        });
     }
 
     /**
@@ -320,9 +335,15 @@ public final class CameraClient {
         io.execute(new Runnable() {
             @Override
             public void run() {
-                // Только START, без 118: повторный 118 сбрасывает активный live-view и
-                // гимбал замолкает. Если стрим остановлен — START его возвращает;
-                // если идёт — остаётся безвредным (в отличие от STOP+START).
+                // Пара 118 → START, как требует свежая прошивка: складённую камеру голый
+                // START не разворачивает. STOP не шлём — он убивает работающий стрим.
+                try {
+                    connection.request(ProtoCodes.SET_ACCESS_CAMERA_FILE_STATE,
+                            Messages.setAccessCameraFileState(5),
+                            settings.getRequestTimeoutMs()).get();
+                } catch (Throwable ignored) {
+                    // старое firmware может не знать команду
+                }
                 try {
                     connection.request(ProtoCodes.START_LIVE_STREAM,
                             Messages.startLiveStream(),

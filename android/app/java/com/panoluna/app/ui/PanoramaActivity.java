@@ -42,6 +42,9 @@ public final class PanoramaActivity extends Activity {
     private TextView counter;
     private ProgressBar progress;
     private TextView logText;
+    private android.widget.ScrollView logScroll;
+    private final java.util.ArrayDeque<String> logHistory = new java.util.ArrayDeque<String>();
+    private static final int LOG_HISTORY_LINES = 40;
     private ImageButton startButton;
     private ImageButton pauseButton;
     private ImageButton resumeButton;
@@ -178,6 +181,7 @@ public final class PanoramaActivity extends Activity {
         counter = findViewById(R.id.pano_counter);
         progress = findViewById(R.id.pano_progress);
         logText = findViewById(R.id.log_text);
+        logScroll = findViewById(R.id.log_scroll);
         startButton = findViewById(R.id.btn_start);
         pauseButton = findViewById(R.id.btn_pause);
         resumeButton = findViewById(R.id.btn_resume);
@@ -570,11 +574,35 @@ public final class PanoramaActivity extends Activity {
         }
     }
 
+    /**
+     * Пишет строку в экранный лог с историей (последние LOG_HISTORY_LINES строк):
+     * пользователь видит весь ход панорамы, а не только последнюю строку — по нему
+     * можно понять, на каком шаге камера отказала.
+     */
     private void log(final String message) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                logText.setText(message);
+                logHistory.addLast(message);
+                while (logHistory.size() > LOG_HISTORY_LINES) {
+                    logHistory.removeFirst();
+                }
+                StringBuilder sb = new StringBuilder();
+                for (String line : logHistory) {
+                    if (sb.length() > 0) {
+                        sb.append('\n');
+                    }
+                    sb.append(line);
+                }
+                logText.setText(sb.toString());
+                if (logScroll != null) {
+                    logScroll.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            logScroll.fullScroll(android.view.View.FOCUS_DOWN);
+                        }
+                    });
+                }
             }
         });
     }
